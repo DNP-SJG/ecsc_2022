@@ -65,14 +65,13 @@ rm(gdrive_shared)
  
  # All individual records in the priority long cycle (i.e. the main declaration table) are identified
  # in the individual, households and crime table (dt_p). The pdcd_largo_p has a wide format with  
- # every recorded problem occurrence recorded as a variable. More over, the table groups information  
- # for justice routes for all prioritized problems.
+ # every problem occurrence recorded as a variable. Moreover, the table groups information  
+ # for justice routes for all prioritized problems under >=3 declaration.
  # 
  
  # Before going in depth with the justice routes data, there is a need for a individual-problem frame
  # to do so, a long format, rather than a wide table is needed.
  #  
- 
   table(!duplicated(pdcd_largo_p$keyp))
   table(pdcd_largo_p$keyp %in% dt_p$keyp) 
  
@@ -81,7 +80,7 @@ rm(gdrive_shared)
   # Problem type reshape (P1670S Pcat A1_ Ptype) - - - - - - - - - - - - - - - - - - - - - - - - - - 
  
   # table format should be shape by problem typologies, categories can be build later.
-  
+  #
   length(grep('A1_', names(pdcd_largo_p)))
   var_t <- names(pdcd_largo_p)[grep('A1_', names(pdcd_largo_p))]
   
@@ -91,7 +90,6 @@ rm(gdrive_shared)
   
   # nj_count1 > total number of declared and classified problems
   #
-  
   pdcd_largo_p$nj_count1 <- rowSums(pdcd_largo_p[,var_t],na.rm = TRUE)
   
   # Wide to long on problem type
@@ -105,7 +103,7 @@ rm(gdrive_shared)
   dt_ln1 <-   dt_ln1[which(dt_ln1$nj_count1 != 0),]
 
 # Problem month reshape (P3009 S1_ PCat_Ptype ) - - - - - - - - - - - - - - - - - - - - - - - - - - 
-  
+  #
   length(grep('P3009S1_', names(pdcd_largo_p)))
   var_m <- names(pdcd_largo_p)[grep('P3009S1_', names(pdcd_largo_p))]
   
@@ -121,7 +119,7 @@ rm(gdrive_shared)
   table(dt_mn1$month)
   
  # Problem year reshape (P3009 S2_ PCat_Ptype ) - - - - - - - - - - - - - - - - - - - - - - -  - - -
-  
+ #
   length(grep('P3009S2_', names(pdcd_largo_p)))
   var_y <- names(pdcd_largo_p)[grep('P3009S2_', names(pdcd_largo_p))]
   
@@ -137,8 +135,7 @@ rm(gdrive_shared)
   table(dt_ye1$year)
   
  # Problem impact reshape (P3009 S2_ PCat_Ptype ) - - - - - - - - - - - - - - - - - - - - - - - - - 
-  #
-  
+ #
   length(grep('P3011_', names(pdcd_largo_p)))
   var_i <- names(pdcd_largo_p)[grep('P3011_', names(pdcd_largo_p))]
   
@@ -156,7 +153,6 @@ rm(gdrive_shared)
 ### 01.1.1 individual-problem key ------------------------------------------------------------------
   # Problems 6 -9 and 11 - 8 were not reported at all.
   #  
-  
   sum(dt_ln1$FEX_C[ grep('P1670S14A1_', dt_ln1$p_type) ])
   sum(dt_ln1$FEX_C[ grep('P1670S10A1_', dt_ln1$p_type) ])
   
@@ -250,8 +246,56 @@ rm(gdrive_shared)
   
   table(dt_pj$nj_prio,dt_pj$nj_count1 );hist(tally(group_by(dt_pj, keyp))$n)
   
-  # 02. PROBLEM DECLARATION FRAME -------------------------------------------------------------------
+# 02. PROBLEM ROUTES -------------------------------------------------------------------------------
   
-  ## 01.1 Priority long cycle -----------------------------------------------------------------------
+  ## 02.1 Priority long cycle ----------------------------------------------------------------------
+  ## 
+  
+  length(grep('A1_', names(pdcd_largo_p)))
+  var_t  <- names(pdcd_largo_p)[grep('A1_', names(pdcd_largo_p))] #typologies
+  var_r  <- names(pdcd_largo_p)[grep('P1672_', names(pdcd_largo_p))] #routes
+  
+  # institutional route
+  var_i1 <- names(pdcd_largo_p)[grep('P1673S', names(pdcd_largo_p))] #institutions all reached
+  var_i2 <- names(pdcd_largo_p)[grep('P1674_', names(pdcd_largo_p))] #institutions last reached
+  
+  var_ir <- names(pdcd_largo_p)[grep('P1675_', names(pdcd_largo_p))] #institutional route reason
+  var_ir <- names(pdcd_largo_p)[grep('P1676', names(pdcd_largo_p))] #institutional route results
+  
+  var_ir <- names(pdcd_largo_p)[grep('P1677', names(pdcd_largo_p))] #resons for no result
+  var_ir <- names(pdcd_largo_p)[grep('P1678', names(pdcd_largo_p))] #reasons for not continuing
+  
+  # institutions, alongside types, are the only wide strcuture in the table. Thus, it is needed
+  # to set the addecuated long format for thos problems properly set by priority order 2 
+  # (i.e. declaraction >= 3). There is a total of 703 of such records (linking only to problems
+  # faced using the institutional rout).
+  #
+  dt_inst_routPLC1 <- tidyr::gather(pdcd_largo_p[c('keyp','keyppp1','FEX_C',
+                                                   var_i1)], 
+                          institution_all, 
+                          nj_count1, 
+                          var_i1, 
+                          factor_key = TRUE)
+  
+  dt_inst_routPLC1 <-   dt_inst_routPLC1[which(dt_inst_routPLC1$nj_count1 != 0),]
+  
+  dt_inst_routPLC2 <- tidyr::gather(pdcd_largo_p[c('keyp','keyppp2','FEX_C',
+                                                   var_i1)], 
+                                    institution_all, 
+                                    nj_count1, 
+                                    var_i1, 
+                                    factor_key = TRUE)
+  
+  dt_inst_routPLC2 <-   dt_inst_routPLC2[which(dt_inst_routPLC2$nj_count1 != 0),]
+  
+  # Rbind long institution table for each priority problem
+  # 
+  names(dt_inst_routPLC1) <- names(dt_inst_routPLC2)
+  dt_inst_routPLC <- rbind(dt_inst_routPLC1,dt_inst_routPLC2); rm(dt_inst_routPLC1,dt_inst_routPLC2)
+  
+  
+  
+  ## 02.2 No Priority long cycle -------------------------------------------------------------------
+  ## 02.3 Short cycle ------------------------------------------------------------------------------
   
   
