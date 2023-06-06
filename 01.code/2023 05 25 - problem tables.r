@@ -659,25 +659,77 @@ table(duplicated(dt_p$keyp))
   names(dt_route_sinp_duplicated_aux)
   names(dt_route_cc_out_aux)
   
+  print()
+  
   dt_route_p$keyp <- NULL
   dt_route_p$P3013 <- NULL
   
   dt_rt <-  plyr::rbind.fill(dt_route_p,dt_route_sinp,dt_route_cc)
   dt_rtD <-  plyr::rbind.fill(dt_route_sinp_duplicated_aux,dt_route_cc_out_aux)
   
+  # Four duplicated records on the dt_rt table. At face value, this should not be an issue. Yet
+  # if the records are not present in the general declaration table (so the routes differientiate 
+  # them ), they should be excluded from the merging.
+  # 
+  # "600248110107" Declarant reported 9 problems, yet is the only one that appears in either the 
+  #                priority table or the short cycle.
+  # "606052141411" Declarant reported 5 problems, yet is the only one that appears in either the 
+  #                priority table or the short cycle.
+  # "607134111411" Declarant reported 3 problems, yet is the only one that appears in either the 
+  #                priority table or the short cycle.
+  # "627214121411" Declarant reported 3 problems, yet is the only one that appears in either the 
+  #                priority table or the short cycle.
+  # 
   table(duplicated(dt_rt$keypp))
   table(duplicated(dt_rtD$keypp))
   
   table(dt_rt$keypp %in% dt_pj$keypp)
   table(dt_rtD$keypp %in% dt_pj$keypp)
+  table(dt_rtD$keypp %in% dt_rt$keypp)
   
-  dt_pj_rt <- merge(dt_pj,dt_rt[!duplicated(dt_rt$keypp),], all.x = TRUE)
+  dt_rt <- dt_rt[!duplicated(dt_rt$keypp),]
+
+  # Creates idenitfyer to set full and imcompleted/misidentifyed records
   
-  names(dt_inst_routNPLCD)
-  names(dt_inst_routCCD)
+  dt_rt$full_prob  <- 1
+  dt_rtD$full_prob <- 0
   
-  table(dt_pj_rt$P1672)
-  table(duplicated(dt_allvisited_inst$keypp))
+  # Merges complete route table with declaration table 
+  # 
+  dt_pj_rt <- merge(dt_pj,dt_rt, all.x = TRUE)
   
-  table((dt_pj_rt$P1685))
+  # Merges partial route table with declaration table 
+  # 
+  dt_pj_rt1 <- merge(dt_pj,dt_rtD, all.y = TRUE)
+  dt_pj_rt1 <- dt_pj_rt1[is.na(dt_pj_rt1$keyp) == FALSE, ]
   
+  dt_pj_rt <- rbind(dt_pj_rt,dt_pj_rt1)
+  table(dt_pj_rt$P1672,dt_pj_rt$full_prob ); rm(dt_pj_rt1)
+  
+  # Appends missing problems to the general declaration table
+  # 
+  table(names(dt_rtD) %in% names(dt_pj_rt))
+  table(dt_rtD$keypp %in% dt_pj_rt$keypp)
+  
+  dt_pj_rt <- plyr::rbind.fill(dt_pj_rt,dt_rtD[dt_rtD$keypp %in% dt_pj_rt$keypp == FALSE ,])
+  
+  table(dt_pj_rt$full_prob ,is.na(dt_pj_rt$impact))
+  table(dt_pj_rt$full_prob )
+
+  ### There are 320 problems that where identified in the declaration stage with no records
+  ### on the route section, that is about 2% of the total declaration (not counting ) the recods
+  ### with route information an no data on impact. The 69 atypical records all come from the routes
+  ### tables, thus they all have completely chracterized problems. The main issue with them is 
+  ### the fact that they do not show up in the declaration table.
+  ###
+  
+  ## 02.4. Consolidated problem-routes-sociodemographic table --------------------------------------
+  
+  table(dt_pj_rt$keyp %in% dt_p$keyp)
+  dt_pj_rt$keyp[dt_pj_rt$keyp %in% dt_p$keyp == FALSE] <- substr(dt_pj_rt$keypp[dt_pj_rt$keyp %in% dt_p$keyp == FALSE],1,8)
+  
+  dt_pj_rt_p <- merge(dt_pj_rt, dt_p, all.x = TRUE, by = "keyp")
+  table(dt_pj_rt_p$P220)  
+  table(is.na(dt_pj_rt_p$P220),dt_pj_rt_p$DEPMUNI)
+
+    
