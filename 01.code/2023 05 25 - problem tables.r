@@ -8,7 +8,7 @@ library(openxlsx)  # Excel file loading/saving
 library(Microsoft365R) # One drive login
 library(AzureGraph) # One drive read
 library(dplyr) # Collapsing and data management
-library(plyr)
+#library(plyr)
 library(tidyr) # Data management
 library(ggplot2) #Plots
 library(stats)
@@ -662,8 +662,8 @@ table(duplicated(dt_p$keyp))
   dt_route_p$keyp <- NULL
   dt_route_p$P3013 <- NULL
   
-  dt_rt <-  rbind.fill(dt_route_p,dt_route_sinp,dt_route_cc)
-  dt_rtD <-  rbind.fill(dt_route_sinp_duplicated_aux,dt_route_cc_out_aux)
+  dt_rt <-  plyr::rbind.fill(dt_route_p,dt_route_sinp,dt_route_cc)
+  dt_rtD <-  plyr::rbind.fill(dt_route_sinp_duplicated_aux,dt_route_cc_out_aux)
   
   table(duplicated(dt_rt$keypp))
   table(duplicated(dt_rtD$keypp))
@@ -678,4 +678,6 @@ table(duplicated(dt_p$keyp))
   
   table(dt_pj_rt$P1672)
   table(duplicated(dt_allvisited_inst$keypp))
+  
+  table((dt_pj_rt$P1685))
   
