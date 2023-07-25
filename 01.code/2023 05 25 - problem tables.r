@@ -659,7 +659,6 @@ table(duplicated(dt_p$keyp))
   names(dt_route_sinp_duplicated_aux)
   names(dt_route_cc_out_aux)
   
-  print()
   
   dt_route_p$keyp <- NULL
   dt_route_p$P3013 <- NULL
@@ -732,4 +731,95 @@ table(duplicated(dt_p$keyp))
   table(dt_pj_rt_p$P220)  
   table(is.na(dt_pj_rt_p$P220),dt_pj_rt_p$DEPMUNI)
 
-    
+  #openxlsx::write.xlsx(dt_pj_rt_p, 'dt_pj_rt_p.xlsx')
+  
+  # 03. DEFINES LEVEL 1 TRANFORMATIONAL INDICATOR --------------------------------------------------
+  # (Number of people who had at least one of their justiciable problems solved) / 
+  # (Number of people with at least one justiciable problem)
+  # 
+  # All problems fully identifyed in the declaration table
+  dt1 <- dt_pj_rt_p[ dt_pj_rt_p$full_prob == 1, ]
+  table(dt1$P1685);table(is.na(dt1$P1685))
+  dt1 <- dt1[!is.na(dt1$P1685), ]
+  table(dt1$P1685)
+  dt1$P1685[dt1$P1685 == 2] <- 0
+  
+  table(dt1$P1672) # 3 and 4 refer to illegal/violent solution paths
+  dt1$pj <- 1
+  
+  dt1_num <- dt1 |> group_by(keyp, FEX_C.x) |> summarise(pj = sum(P1685) )
+  
+  table(duplicated(dt1$keyp))
+  table(dt1_num$pj)
+  sum(dt1_num$FEX_C.x)
+  sum(dt1$FEX_C.x[!duplicated(dt1$keyp)])
+
+  dt1_num$pj <- dt1_num$pj/dt1_num$pj
+  dt1_num$pj[is.na(dt1_num$pj == TRUE)] <- 0
+  
+  sum(dt1_num$FEX_C.x[dt1_num$pj == 1]) / sum(dt1_num$FEX_C.x)
+  
+  # All problems fully identifyed in the declaration table with no violent routes
+  # 
+  dt2 <- dt_pj_rt_p[ dt_pj_rt_p$full_prob == 1, ]
+  table(dt2$P1685);table(is.na(dt2$P1685))
+  dt2 <- dt2[!is.na(dt2$P1685), ]
+  table(dt2$P1685)
+  dt2$P1685[dt2$P1685 == 2] <- 0
+  
+  table(dt1$P1672) # 3 and 4 refer to illegal/violent solution paths
+  dt2 <- dt2[ dt2$P1672 != 3, ]
+  dt2 <- dt2[ dt2$P1672 != 4, ]
+  
+  
+  dt2_num <- dt2 |> group_by(keyp, FEX_C.x) |> summarise(pj = sum(P1685) )
+  
+  table(duplicated(dt2$keyp))
+  table(dt2_num$pj)
+  table(is.na(dt2_num$pj))
+  
+  sum(dt2_num$FEX_C.x)
+  sum(dt2$FEX_C.x[!duplicated(dt2$keyp)])
+  
+  dt2_num$pj <- dt2_num$pj/dt2_num$pj
+  dt2_num$pj[is.na(dt2_num$pj == TRUE)] <- 0
+  
+  sum(dt2_num$FEX_C.x[dt2_num$pj == 1]) / sum(dt2_num$FEX_C.x)
+  
+  
+  # Legal needs
+  # 
+  dt3 <- dt_pj_rt_p[ dt_pj_rt_p$full_prob == 1, ]
+  table(dt3$P1685);table(is.na(dt3$P1685))
+  dt3 <- dt3[!is.na(dt3$P1685), ]
+  table(dt3$P1685)
+  dt3$P1685[dt3$P1685 == 2] <- 0
+  
+  table(dt1$P1672) # 3 and 4 refer to illegal/violent solution paths
+  dt3 <- dt3[ dt3$P1672 != 3, ]
+  dt3 <- dt3[ dt3$P1672 != 4, ]
+  dt3 <- dt3[ dt3$P1672 != 5, ]
+  dt3 <- dt3[ dt3$cat_en == 'Crime', ]
+                
+  
+  dt3_num <- dt3 |> group_by(keyp, FEX_C.x) |> summarise(pj = sum(P1685) )
+  
+  table(duplicated(dt3$keyp))
+  table(dt3_num$pj)
+  table(is.na(dt3_num$pj))
+  
+  sum(dt3_num$FEX_C.x)
+  sum(dt3$FEX_C.x[!duplicated(dt3$keyp)])
+  
+  dt3_num$pj <- dt3_num$pj/dt3_num$pj
+  dt3_num$pj[is.na(dt3_num$pj == TRUE)] <- 0
+  
+  sum(dt3_num$FEX_C.x[dt3_num$pj == 1]) / sum(dt3_num$FEX_C.x)
+  
+  getwd()
+  saveRDS(dt_allvisited_inst, 'dt_inst.rds')
+  saveRDS(dt_pj_rt_p,'dt_pj_rt_p.rds')
+  saveRDS(dt_p,'dt_p.rds')
+  
+  
+  
