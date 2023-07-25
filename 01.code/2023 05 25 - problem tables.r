@@ -650,6 +650,8 @@ table(duplicated(dt_p$keyp))
   
   table(is.na(dt_allvisited_inst$institution_en));table(is.na(dt_allvisited_instD$institution_en))
   
+  openxlsx::write.xlsx(file = '2023 06 30 - all_inst.xlsx',rbind(dt_allvisited_inst,dt_allvisited_instD))
+  
   ## 02.3. Consolidated routes table  --------------------------------------------------------------
   
   names(dt_route_p)
@@ -726,10 +728,26 @@ table(duplicated(dt_p$keyp))
   
   table(dt_pj_rt$keyp %in% dt_p$keyp)
   dt_pj_rt$keyp[dt_pj_rt$keyp %in% dt_p$keyp == FALSE] <- substr(dt_pj_rt$keypp[dt_pj_rt$keyp %in% dt_p$keyp == FALSE],1,8)
-  
   dt_pj_rt_p <- merge(dt_pj_rt, dt_p, all.x = TRUE, by = "keyp")
+  
+  
   table(dt_pj_rt_p$P220)  
   table(is.na(dt_pj_rt_p$P220),dt_pj_rt_p$DEPMUNI)
+  
+  # merges to general population table to get incidence and declaration
+  
+  dt_pj_rtu <- dt_pj_rt
+  dt_pj_rtu <- dt_pj_rtu %>% group_by(keyp) %>% mutate(count = n(), p_mean = mean(impact))
+  
+  table(duplicated(dt_pj_rt$keyp))
+  
+  dt_pj_rtu <- dt_pj_rtu[!duplicated(dt_pj_rtu$keyp), c('keyp','impact','count')]
+  
+  table(dt_pj_rtu$keyp %in% dt_p$keyp)
+  
+  dt_p_pj <- merge( dt_p, dt_pj_rtu, all.x = TRUE, by = "keyp")
+  
+  
 
   #openxlsx::write.xlsx(dt_pj_rt_p, 'dt_pj_rt_p.xlsx')
   
@@ -820,6 +838,7 @@ table(duplicated(dt_p$keyp))
   saveRDS(dt_allvisited_inst, 'dt_inst.rds')
   saveRDS(dt_pj_rt_p,'dt_pj_rt_p.rds')
   saveRDS(dt_p,'dt_p.rds')
+  saveRDS(dt_p_pj ,'dt_p_pj.rds')
   
   
   
