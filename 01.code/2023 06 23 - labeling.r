@@ -29,7 +29,8 @@ library(Hmisc) # sets variable labels
 gd <- c(
   "https://drive.google.com/file/d/1kiSAB_gY-4mXOt1EcI2x4sDTB-FG6kxl/view", #Individuals
   "https://drive.google.com/file/d/1JxTGqtd-oSfQIkbdfoQrzmMn0aMcewAj/view", #Problems
-  "https://drive.google.com/file/d/1E6BV8_8cZm1nNUQbxg6IvGulYBbqcB3u/view" #Institutions
+  "https://drive.google.com/file/d/1E6BV8_8cZm1nNUQbxg6IvGulYBbqcB3u/view", #Institutions
+  "https://drive.google.com/file/d/17ghCbHsjgl5FHD75rf9U8wecAnnxpsx6/view"  #Individuals problems 
     )
 
 files_f <- function(x){
@@ -40,16 +41,18 @@ files_f <- function(x){
   }
 
 dt_list <- lapply(gd,files_f);rm(gd)
-names(dt_list) <- c('dt_p','dt_pj_rt_p','dt_allvisited_inst')
+names(dt_list) <- c('dt_p','dt_pj_rt_p','dt_allvisited_inst','dt_p_pj')
 
 dt_p <- dt_list[['dt_p']]
 dt_pj_rt_p <- dt_list[['dt_pj_rt_p']]
 dt_allvisited_inst <- dt_list[['dt_allvisited_inst']]
+dt_p_pj <- dt_list[['dt_p_pj']]
 
 names(dt_pj_rt_p)[names(dt_pj_rt_p) == 'FEX_C.x'] <- 'FEX_Cx'
 names(dt_pj_rt_p)[names(dt_pj_rt_p) == 'FEX_C.y'] <- 'FEX_Cy'
 
 dt_pj_rt_p <- as.data.frame( dt_pj_rt_p[ , order(names(dt_pj_rt_p))] )
+dt_p_pj <- as.data.frame( dt_p_pj[ , order(names(dt_p_pj))] )
 
 # There are two (2) types of expansion factors. One comming from the individuals frame (fex_C.y)
 # and one comming from the problem declaration table (fex_c.x) given the non existance of some
@@ -90,19 +93,28 @@ dt_pj_rt_p[,var[i]] <- factor(x = dt_pj_rt_p[,var[i]], levels = levs, lab = labs
 str(dt_pj_rt_p[,var[i]])
 }
 
+var1 <- var[var %in% names(dt_p_pj)]
+
+for(i in 1:length(var1)){
+  levs <- factor_labs$a[factor_labs$var == var1[i]]
+  labs <- factor_labs$b[factor_labs$var == var1[i]]
+  
+  dt_p_pj[,var1[i]] <- factor(x = dt_p_pj[,var1[i]], levels = levs, lab = labs)
+  str(dt_p_pj[,var1[i]])
+}
+
 ## 02.00 variable lables ---------------------------------------------------------------------------
 
 pat <- "https://docs.google.com/uc?id=%s&export=download"
 labs <- openxlsx::read.xlsx(sprintf(pat, "1Wvz50SQuKe7MSKTBWScyi4_OkmbXJ-rY"))
-var.labels <- data.frame(names = names(dt_pj_rt_p))
+var.labels <- data.frame(names = names(dt_p_pj))
 table(var.labels$names %in% labs$names)
 
 var.labels <- merge(var.labels, labs, all.x =  TRUE)
 
-
-dt_pj_rt_p <- labelled::set_variable_labels(dt_pj_rt_p, .labels = substr(var.labels$lab, 1, 75))
-names(dt_pj_rt_p)
-label(dt_pj_rt_p)
+dt_p_pj <- labelled::set_variable_labels(dt_p_pj, .labels = substr(var.labels$lab, 1, 75))
+names(dt_p_pj)
+table(dt_p_pj$count)
 
 dt_pj_rt_p <- dt_pj_rt_p[c(
   "keyh",
@@ -474,6 +486,14 @@ dt_pj_rt_p <- dt_pj_rt_p[c(
 )]
 
 
+haven::write_dta(dt_p_pj,'dt_p_pj.dta')
+saveRDS(dt_p_pj,'dt_p_pj.rds')
+openxlsx::write.xlsx(dt_p_pj,'dt_p_pj.xlsx')
+
 haven::write_dta(dt_pj_rt_p,'dt_pj_rt_p.dta')
 saveRDS(dt_pj_rt_p,'dt_pj_rt_p.rds')
 openxlsx::write.xlsx(dt_pj_rt_p,'dt_pj_rt_p.xlsx')
+
+dt_p_pj$countd <- dt_p_pj$count/dt_p_pj$count
+dt_p_pj$countd[is.na(dt_p_pj$countd) == TRUE] <- 0
+table(dt_p_pj$P1343, dt_p_pj$countd)
