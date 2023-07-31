@@ -103,4 +103,6 @@ pl <- pl + labs(fill = 'Nodes')
 
 pl
 
+getwd()
+openxlsx::write.xlsx(dt, '01.1. general declaration by sex class and age margin.xlsx' )
 rm(df,dagg,pl,dt)
