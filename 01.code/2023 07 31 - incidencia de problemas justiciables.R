@@ -66,9 +66,8 @@ dt_pl$a18[dt_pl$P5785 > 17] <- 1
 table(dt_pl$a18, dt_pl$jp)
 
 # 01. CLASS, AGE MARGIN, SEX, DECLARATION ----------------------------------------------------------
-#
-#install.packages("remotes")
-#remotes::install_github("davidsjoberg/ggsankey")
+# Sandkey
+
 library(ggsankey)
 library(tidyverse)
 library(ggalluvial)
@@ -103,4 +102,5 @@ pl <- pl + labs(caption = "ECSC 2022")
 pl <- pl + labs(fill = 'Nodes')
 
 pl
+
 rm(df,dagg,pl,dt)
