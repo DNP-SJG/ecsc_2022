@@ -106,3 +106,39 @@ pl
 getwd()
 openxlsx::write.xlsx(dt, '01.1. general declaration by sex class and age margin.xlsx' )
 rm(df,dagg,pl,dt)
+
+# 02. CLASS, AGE MARGIN, SEX,EDUCATION, DECLARATION ------------------------------------------------
+# 
+dt <- dt_pl |> group_by(Clase,a18,P220,P6210,jp) |> summarise(pj = sum(FEX_C) )
+getwd()
+openxlsx::write.xlsx(dt, '01.2. general declaration by sex class and age margin edu.xlsx' )
+rm(df,dagg,pl,dt)
+
+table(dt_pl$P6210)
+
+
+
+dt <- dt_pl |> group_by(Clase,a18,P220,P6210,P5785,P1988S1) |> summarise(pj = mean(jp) )
+
+dt$edug <- 0
+dt$edug[dt$P6210 == 'Superior o Universitaria' ] <- 1
+dt$edug[dt$P6210 == 'Media (10-13)' ] <- 1
+dt$edug <- factor(dt$edug)
+
+table(dt$P1988S1)
+dt$strata <- 0
+
+dt$strata[dt$P1988S1 > 5 ] <- 1
+dt$strata <- factor(dt$strata)
+
+mean(dt$pj[dt$P220 == 'Mujer'& dt$a18 == 1 & is.na(dt$P1988S1) == FALSE ])
+mean(dt$pj[dt$P220 == 'Hombre'& dt$a18 == 1 & is.na(dt$P1988S1) == FALSE ])
+
+
+library("ggpubr")
+ggboxplot(dt[dt$a18 == 1,], x = "Clase", y = "pj", 
+          color = "Clase", palette = c("#00AFBB", "#E7B800"),
+          ylab = "Weight", xlab = "Groups")
+
+wilcox.test(pj ~ Clase, data = dt[dt$a18 == 1 & is.na(dt$P1988S1) == FALSE,],
+                   exact = FALSE)
