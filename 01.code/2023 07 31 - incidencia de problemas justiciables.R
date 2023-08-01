@@ -116,14 +116,92 @@ rm(df,dagg,pl,dt)
 
 table(dt_pl$P6210)
 
+# Sets some categorical variables to run non-parametric mean differences test
+# 
+dt_pl$edug <- 0
+dt_pl$edug[dt_pl$P6210 == 'Superior o Universitaria' ] <- 1
+dt_pl$edug[dt_pl$P6210 == 'Media (10-13)' ] <- 1
+dt_pl$edug <- factor(dt_pl$edug)
+
+# Victimization variable rebuild
+# 
+table(dt_pl$vic); table(is.na(dt_pl$vic))
+dt_pl$vic[is.na(dt_pl$vic)] <- 0 # As the Vic variable was build under the declaration table
+# all individuals who experienced a Vic circumstance  also declared JP. This is a problem.
+# 
+table(dt_pl$P541) # 2022 hurto a residencia
+table(as.numeric((dt_pl$P541)))
+dt_pl$P541 <- as.numeric((dt_pl$P541)) 
+table(dt_pl$P5785,dt_pl$P541)
+
+table(dt_pl$P1959) # 2022 hurto a animales
+table(as.numeric((dt_pl$P1959)))
+dt_pl$P1959 <- as.numeric((dt_pl$P1959)) 
+table(dt_pl$P5785,dt_pl$P1959)
+
+table(dt_pl$P523) # 2022 hurto a vehiculos
+table(as.numeric((dt_pl$P523)))
+dt_pl$P523 <- as.numeric((dt_pl$P523)) 
+table(dt_pl$P5785,dt_pl$P523)
+
+table(dt_pl$P525) # 2022 hurto a personas
+table(as.numeric((dt_pl$P525)))
+dt_pl$P525 <- as.numeric((dt_pl$P525)) 
+table(dt_pl$P5785,dt_pl$P525)
+
+table(dt_pl$P3304) # 2022 ciberdelitos
+table(as.numeric((dt_pl$P3304)))
+dt_pl$P3304 <- as.numeric((dt_pl$P3304)) 
+table(dt_pl$P5785,dt_pl$P3304)
+
+table(dt_pl$P526) # 2022 peleas
+table(as.numeric((dt_pl$P526)))
+dt_pl$P526 <- as.numeric((dt_pl$P526)) 
+table(dt_pl$P5785,dt_pl$P526)
+
+table(dt_pl$P528) # 2022 extorsion
+table(as.numeric((dt_pl$P528)))
+dt_pl$P528 <- as.numeric((dt_pl$P528)) 
+table(dt_pl$P5785,dt_pl$P528)
+
+table(dt_pl$P1956) # 2022 otro hecho
+table(as.numeric((dt_pl$P1956)))
+dt_pl$P1956 <- as.numeric((dt_pl$P1956)) 
+table(dt_pl$P5785,dt_pl$P1956)
 
 
-dt <- dt_pl |> group_by(Clase,a18,P220,P6210,P5785,P1988S1) |> summarise(pj = mean(jp) )
+dt_pl$P541[dt_pl$P541 == 2 ] <- 1
+dt_pl$P1959[dt_pl$P1959 == 2 ] <- 1
+dt_pl$P523[dt_pl$P523 == 2 ] <- 1
+dt_pl$P525[dt_pl$P525 == 2 ] <- 1
+dt_pl$P3304[dt_pl$P3304 == 2 ] <- 1
+dt_pl$P526[dt_pl$P526 == 2 ] <- 1
+dt_pl$P528[dt_pl$P528 == 2 ] <- 1
+dt_pl$P1956[dt_pl$P1956 == 2 ] <- 1
 
-dt$edug <- 0
-dt$edug[dt$P6210 == 'Superior o Universitaria' ] <- 1
-dt$edug[dt$P6210 == 'Media (10-13)' ] <- 1
-dt$edug <- factor(dt$edug)
+dt_pl$vic_2022 <- rowSums(dt_pl[c("P541",
+                                  "P523",
+                                  "P525",
+                                  "P3304",
+                                  "P526",
+                                  "P528",
+                                  "P1959",
+                                  "P1956")], na.rm = TRUE)
+
+View(dt_pl[276,c("P541",
+             "P523",
+             "P525",
+             "P3304",
+             "P526",
+             "P528",
+             "P1959",
+             "P1956")])
+dt_pl$vic_2022 <- dt_pl$vic_2022/dt_pl$vic_2022
+dt_pl$vic_2022[is.nan(dt_pl$vic_2022 ) ] <- 0
+
+table(dt_pl$vic_2022,dt_pl$jp)
+
+dt <- dt_pl |> group_by(Clase,a18,P220,edug,P5785,P1988S1,vic) |> summarise(pj = mean(jp) )
 
 table(dt$P1988S1)
 dt$strata <- 0
@@ -135,10 +213,58 @@ mean(dt$pj[dt$P220 == 'Mujer'& dt$a18 == 1 & is.na(dt$P1988S1) == FALSE ])
 mean(dt$pj[dt$P220 == 'Hombre'& dt$a18 == 1 & is.na(dt$P1988S1) == FALSE ])
 
 
+
+# Class
+wilcox.test(pj ~ Clase, data = dt[dt$a18 == 1,], exact = FALSE)
+wilcox.test(jp ~ Clase, data = dt_pl[dt_pl$a18 == 1,], exact = FALSE)
+
+dt_pl[dt_pl$a18 == 1,] |> group_by(Clase) |> summarise(pj = mean(jp) )
+
+# Sex
+wilcox.test(pj ~ P220, data = dt[dt$a18 == 1,], exact = FALSE)
+wilcox.test(jp ~ P220, data = dt_pl[dt_pl$a18 == 1,], exact = FALSE)
+
+dt_pl[dt_pl$a18 == 1,] |> group_by(P220) |> summarise(pj = mean(jp) )
+
+# Education
+wilcox.test(pj ~ edug, data = dt[dt$a18 == 1,], exact = FALSE)
+wilcox.test(jp ~ edug, data = dt_pl[dt_pl$a18 == 1,], exact = FALSE)
+
+dt_pl[dt_pl$a18 == 1,] |> group_by(edug) |> summarise(pj = mean(jp) )
+
+dt_pl[dt_pl$a18 == 1,] |> group_by(vic) |> summarise(pj = mean(jp) )
+
 library("ggpubr")
-ggboxplot(dt[dt$a18 == 1,], x = "Clase", y = "pj", 
-          color = "Clase", palette = c("#00AFBB", "#E7B800"),
+ggboxplot(dt[dt$a18 == 1,], x = "edug", y = "pj", 
+          color = "edug", palette = c("#00AFBB", "#E7B800"),
           ylab = "Weight", xlab = "Groups")
 
-wilcox.test(pj ~ Clase, data = dt[dt$a18 == 1 & is.na(dt$P1988S1) == FALSE,],
-                   exact = FALSE)
+
+
+dt$a <- (dt$pj - mean(dt$pj)) / sd(dt$pj)
+hist(dt$a)
+shapiro.test(dt$a[1:5000])
+shapiro.test(rnorm(100, mean = 5, sd = 3))
+shapiro.test(runif(100, min = 2, max = 4))
+
+
+
+with(dt[dt$a18 == 1,], shapiro.test(pj[Clase == "Centro poblado y rur"])) # p = 0.6
+
+var.test(pj ~ Clase, data = dt[dt$a18 == 1,])
+
+t.test(pj ~ Clase, data = dt[dt$a18 == 1,], var.equal = TRUE)
+
+
+dt <- dt_pl |> group_by(Clase,a18,P220,P6210,P5785,P1988S1) |> summarise(pj = mean(jp) )
+
+output <- dt_pl |>
+  select(-keyp) |>
+  group_by(Clase, P220)|>
+  summarize_at(
+    vars(-group_cols(), -Session),
+    list(t.test = ~ list(t.test(. ~ Session))))
+
+output
+
+
