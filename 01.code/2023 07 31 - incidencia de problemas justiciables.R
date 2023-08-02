@@ -42,7 +42,7 @@ files_f <- function(x){
 dt_list <- lapply(gd,files_f);rm(gd)
 names(dt_list) <- c('dt_p','dt_pj_rt_p','dt_allvisited_inst','dt_pj_rt_pl','dt_pl')
 
-# 00. DEFINES TOTAL DECLARATION UNIVERSE -----------------------------------------------------------
+# 00.02 DEFINES TOTAL DECLARATION UNIVERSE ---------------------------------------------------------
 #
 dt_pl <- dt_list[['dt_pl']]
 dt_pj_rt_pl <- dt_list[['dt_pj_rt_pl']]
@@ -59,11 +59,157 @@ dt_pl$jp <- dt_pl$count/dt_pl$count
 table(dt_pl$jp); table(!duplicated(dt_pj_rt_pl$keyp))
 dt_pl$jp[is.na(dt_pl$jp) == TRUE] <- 0
 
-## Creates 18 and above indicator
+## Creates 18 and above indicator ------------------------------------------------------------------
 ## 
 dt_pl$a18 <- 0
 dt_pl$a18[dt_pl$P5785 > 17] <- 1
 table(dt_pl$a18, dt_pl$jp)
+
+# Sets some categorical variables to run non-parametric mean differences test ----------------------
+# 
+dt_pl$edug <- 0
+dt_pl$edug[dt_pl$P6210 == 'Superior o Universitaria' ] <- 1
+dt_pl$edug[dt_pl$P6210 == 'Media (10-13)' ] <- 1
+dt_pl$edug <- factor(dt_pl$edug)
+
+# Victimization variable rebuild 2022/2021 ---------------------------------------------------------
+# 
+table(dt_pl$vic); table(is.na(dt_pl$vic))
+dt_pl$vic[is.na(dt_pl$vic)] <- 0 # As the Vic variable was build under the declaration table
+# all individuals who experienced a Vic circumstance  also declared JP. This is a problem.
+
+# Household Theft - - - - - - -
+# 
+# 2022 
+table(dt_pl$P541) 
+table(as.numeric((dt_pl$P541)))
+dt_pl$P541 <- as.numeric((dt_pl$P541))
+
+# 2021 
+table(dt_pl$P1392) 
+table(as.numeric((dt_pl$P1392)))
+dt_pl$P1392 <- as.numeric((dt_pl$P1392))
+
+# Animal theft - - - - - - -
+# 
+# 2022
+table(dt_pl$P1959)
+table(as.numeric((dt_pl$P1959)))
+dt_pl$P1959 <- as.numeric((dt_pl$P1959))
+
+# 2021 
+table(dt_pl$P1960) 
+table(as.numeric((dt_pl$P1960)))
+dt_pl$P1960 <- as.numeric((dt_pl$P1960))
+
+#  Vehicle Theft - - - - - - -
+#  
+# 2022
+table(dt_pl$P523)
+table(as.numeric((dt_pl$P523)))
+dt_pl$P523 <- as.numeric((dt_pl$P523))
+
+# 2021
+table(dt_pl$P1179) 
+table(as.numeric((dt_pl$P1179)))
+dt_pl$P1179 <- as.numeric((dt_pl$P1179))
+
+# Theft over individuals  - - - - - - -
+# 
+# 2022 
+table(dt_pl$P525) 
+table(as.numeric((dt_pl$P525)))
+dt_pl$P525 <- as.numeric((dt_pl$P525))
+
+# 2021 
+table(dt_pl$P1343) 
+table(as.numeric((dt_pl$P1343)))
+dt_pl$P1343 <- as.numeric((dt_pl$P1343))
+
+# Quarrels - - - - - - -
+#
+# 2022
+table(dt_pl$P526)  
+table(as.numeric((dt_pl$P526)))
+dt_pl$P526 <- as.numeric((dt_pl$P526))
+
+# 2021 
+table(dt_pl$P1315) 
+table(as.numeric((dt_pl$P1315)))
+dt_pl$P1315 <- as.numeric((dt_pl$P1315))
+
+# Extortion  - - - - - - - 
+# 
+# 2022
+table(dt_pl$P528)  
+table(as.numeric((dt_pl$P528)))
+dt_pl$P528 <- as.numeric((dt_pl$P528))
+
+# 2021 
+table(dt_pl$P1286) 
+table(as.numeric((dt_pl$P1286)))
+dt_pl$P1286 <- as.numeric((dt_pl$P1286))
+
+# Other type of crime  - - - - - - -
+# 
+# 2022
+table(dt_pl$P1956) 
+table(as.numeric((dt_pl$P1956)))
+dt_pl$P1956 <- as.numeric((dt_pl$P1956))
+
+# 2021
+table(dt_pl$P1976S1) 
+table(as.numeric((dt_pl$P1976S1)))
+dt_pl$P1976S1 <- as.numeric((dt_pl$P1976S1)) 
+
+
+dt_pl$P541[dt_pl$P541 == 2 ] <- 1
+dt_pl$P1959[dt_pl$P1959 == 2 ] <- 1
+dt_pl$P523[dt_pl$P523 == 2 ] <- 1
+dt_pl$P525[dt_pl$P525 == 2 ] <- 1
+dt_pl$P526[dt_pl$P526 == 2 ] <- 1
+dt_pl$P528[dt_pl$P528 == 2 ] <- 1
+dt_pl$P1956[dt_pl$P1956 == 2 ] <- 1
+
+dt_pl$P1392[dt_pl$P1392 == 2 ] <- 1
+dt_pl$P1960[dt_pl$P1960 == 2 ] <- 1
+dt_pl$P1179[dt_pl$P1179 == 2 ] <- 1
+dt_pl$P1343[dt_pl$P1343 == 2 ] <- 1
+dt_pl$P1315[dt_pl$P1315 == 2 ] <- 1
+dt_pl$P1286[dt_pl$P1286 == 2 ] <- 1
+dt_pl$P1976S1[dt_pl$P1976S1 == 2 ] <- 1
+
+
+dt_pl$vic_2022 <- rowSums(dt_pl[c("P541",
+                                  "P523",
+                                  "P525",
+                                  "P526",
+                                  "P528",
+                                  "P1959",
+                                  "P1956"
+)], na.rm = TRUE)
+
+dt_pl$vic_2021 <- rowSums(dt_pl[c('P1392',
+                                  'P1960',
+                                  'P1179',
+                                  'P1343',
+                                  'P1315',
+                                  'P1286',
+                                  'P1976S1'
+)], na.rm = TRUE)
+
+table(dt_pl$vic_2022)
+table(dt_pl$vic_2021)
+
+dt_pl$vic_2022 <- dt_pl$vic_2022/dt_pl$vic_2022
+dt_pl$vic_2021 <- dt_pl$vic_2021/dt_pl$vic_2021
+
+dt_pl$vic_2022[is.nan(dt_pl$vic_2022)] <- 0
+dt_pl$vic_2021[is.nan(dt_pl$vic_2021)] <- 0
+
+sum(dt_pl$vic_2022)
+sum(dt_pl$vic_2021)
+
 
 # 01. CLASS, AGE MARGIN, SEX, DECLARATION ----------------------------------------------------------
 # Sandkey
@@ -116,89 +262,9 @@ rm(df,dagg,pl,dt)
 
 table(dt_pl$P6210)
 
-# Sets some categorical variables to run non-parametric mean differences test
-# 
-dt_pl$edug <- 0
-dt_pl$edug[dt_pl$P6210 == 'Superior o Universitaria' ] <- 1
-dt_pl$edug[dt_pl$P6210 == 'Media (10-13)' ] <- 1
-dt_pl$edug <- factor(dt_pl$edug)
-
-# Victimization variable rebuild
-# 
-table(dt_pl$vic); table(is.na(dt_pl$vic))
-dt_pl$vic[is.na(dt_pl$vic)] <- 0 # As the Vic variable was build under the declaration table
-# all individuals who experienced a Vic circumstance  also declared JP. This is a problem.
-# 
-table(dt_pl$P541) # 2022 hurto a residencia
-table(as.numeric((dt_pl$P541)))
-dt_pl$P541 <- as.numeric((dt_pl$P541)) 
-table(dt_pl$P5785,dt_pl$P541)
-
-table(dt_pl$P1959) # 2022 hurto a animales
-table(as.numeric((dt_pl$P1959)))
-dt_pl$P1959 <- as.numeric((dt_pl$P1959)) 
-table(dt_pl$P5785,dt_pl$P1959)
-
-table(dt_pl$P523) # 2022 hurto a vehiculos
-table(as.numeric((dt_pl$P523)))
-dt_pl$P523 <- as.numeric((dt_pl$P523)) 
-table(dt_pl$P5785,dt_pl$P523)
-
-table(dt_pl$P525) # 2022 hurto a personas
-table(as.numeric((dt_pl$P525)))
-dt_pl$P525 <- as.numeric((dt_pl$P525)) 
-table(dt_pl$P5785,dt_pl$P525)
-
-table(dt_pl$P3304) # 2022 ciberdelitos
-table(as.numeric((dt_pl$P3304)))
-dt_pl$P3304 <- as.numeric((dt_pl$P3304)) 
-table(dt_pl$P5785,dt_pl$P3304)
-
-table(dt_pl$P526) # 2022 peleas
-table(as.numeric((dt_pl$P526)))
-dt_pl$P526 <- as.numeric((dt_pl$P526)) 
-table(dt_pl$P5785,dt_pl$P526)
-
-table(dt_pl$P528) # 2022 extorsion
-table(as.numeric((dt_pl$P528)))
-dt_pl$P528 <- as.numeric((dt_pl$P528)) 
-table(dt_pl$P5785,dt_pl$P528)
-
-table(dt_pl$P1956) # 2022 otro hecho
-table(as.numeric((dt_pl$P1956)))
-dt_pl$P1956 <- as.numeric((dt_pl$P1956)) 
-table(dt_pl$P5785,dt_pl$P1956)
 
 
-dt_pl$P541[dt_pl$P541 == 2 ] <- 1
-dt_pl$P1959[dt_pl$P1959 == 2 ] <- 1
-dt_pl$P523[dt_pl$P523 == 2 ] <- 1
-dt_pl$P525[dt_pl$P525 == 2 ] <- 1
-dt_pl$P3304[dt_pl$P3304 == 2 ] <- 1
-dt_pl$P526[dt_pl$P526 == 2 ] <- 1
-dt_pl$P528[dt_pl$P528 == 2 ] <- 1
-dt_pl$P1956[dt_pl$P1956 == 2 ] <- 1
-
-dt_pl$vic_2022 <- rowSums(dt_pl[c("P541",
-                                  "P523",
-                                  "P525",
-                                  "P3304",
-                                  "P526",
-                                  "P528",
-                                  "P1959",
-                                  "P1956")], na.rm = TRUE)
-
-View(dt_pl[276,c("P541",
-             "P523",
-             "P525",
-             "P3304",
-             "P526",
-             "P528",
-             "P1959",
-             "P1956")])
-dt_pl$vic_2022 <- dt_pl$vic_2022/dt_pl$vic_2022
-dt_pl$vic_2022[is.nan(dt_pl$vic_2022 ) ] <- 0
-
+table(dt_pl$vic_2021,dt_pl$jp)
 table(dt_pl$vic_2022,dt_pl$jp)
 
 dt <- dt_pl |> group_by(Clase,a18,P220,edug,P5785,P1988S1,vic) |> summarise(pj = mean(jp) )
