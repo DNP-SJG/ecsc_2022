@@ -139,6 +139,44 @@ sum(dt_pl$FEX_C[dt_pl$vic_2021 != 0])
 table(dt_pl$vic_2021,dt_pl$jp)
 table(dt_pl$vic_2022,dt_pl$jp) 
 
+## Subjective well-being ----------------------------------------------------------------------------
+## 
+
+swvars <- c('P3503S1','P3503S2','P3503S3','P3503S4','P3503S5','P3503S6')
+swvarsl <- c('la vida en general','su estado de salud','su situación económica',
+             'su situación laboral','su vida emocional','sus relaciones interpersonales')
+
+lapply(swvars, function(x){table(dt_pl[,x])})
+
+for(i in 1:length(swvars)){
+  print(table(dt_pl[,var]))
+  var <- swvars[i]
+  dt_pl[,var][is.na(dt_pl[,var]) == TRUE] <- 0
+  print(table(dt_pl[,var]))
+  print(table(dt_pl$P5785,dt_pl[,var]))
+}
+
+
+for (i in 1:length(swvars)) {
+  
+x <- swvars[i]
+
+p <- ggplot(dt_pl[dt_pl[,x] != 0 & dt_pl[,x] != 9,], 
+       aes(x = dt_pl[,x][dt_pl[,x] != 0 & dt_pl[,x] != 9], 
+                after_stat(density), fill = as.factor(jp))) +
+  geom_histogram( bins = 5,alpha = 0.7, position = "identity") + 
+  scale_color_manual(values=c( "#E7B800", "#00AFBB"))+
+  scale_fill_manual('',
+                    values=c( "#E7B800", "#00AFBB"),
+                    labels=c("No declarante","Declarante"))+
+  theme_minimal() + 
+  theme(legend.position="top") +
+  labs(x= paste0('Valoracion subjetiva de ',swvarsl[i]), y = "Densidad")
+
+print(p)
+rm(p)
+}
+
 # 01. CLASS, AGE MARGIN, SEX, DECLARATION ----------------------------------------------------------
 # Sandkey
 
