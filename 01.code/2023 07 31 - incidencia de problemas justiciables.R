@@ -77,8 +77,8 @@ for (i in 1:length(crimenames)){
     cap_list[[crime]]$SECUENCIA_P,
     cap_list[[crime]]$ORDEN
   )
-  print(table(duplicated(cap_list[[crime]]$key)))
-  print(table(cap_list[[crime]]$key %in% dt_pl$keyc ))
+  print(table(duplicated(cap_list[[crime]]$keyc)))
+  print(table(cap_list[[crime]]$keyc %in% dt_pl$keyc ))
 }
 rm(crimenames,crime)
 
@@ -90,17 +90,20 @@ dt_pl <- merge(dt_pl, cap_list[['hurto_vehiculos.dta']][c('keyc','P1110','P1238'
 dt_pl <- merge(dt_pl, cap_list[['rinas_peleas.dta']][c('keyc','P1294','P1227')], all.x = TRUE)
 
 rm(i,pat,cap_lab,cap_list,files_f)
+dt_plx  <- dt_pl
+dt_pl  <- dt_plx 
 
 ## Justiciable problem count and id ----------------------------------------------------------------
 ## 
 sum(dt_pl$FEX_C)
 table(dt_pl$count); table(is.na(dt_pl$count))  #Checks total against total declaration table
 
-dt_pl$count[is.na(dt_pl$count) == TRUE] <- 0
+# dt_pl$count[is.na(dt_pl$count) == TRUE] <- 0
+# 
 table(dt_pl$count)
 
 dt_pl$jp <- dt_pl$count/dt_pl$count
-table(dt_pl$jp); table(!duplicated(dt_pj_rt_pl$keyp))
+table(dt_pl$jp[dt_pl$P5785 > 17]); table(!duplicated(dt_pj_rt_pl$keyp))
 dt_pl$jp[is.na(dt_pl$jp) == TRUE] <- 0
 
 ## 18 and above indicator --------------------------------------------------------------------------
@@ -114,21 +117,106 @@ dt_pl <- dt_pl[dt_pl$P5785 > 14,]
 # 00.02 DEFINES RELEVANT GROUPING VARIABLES --------------------------------------------------------
 #
 
+frec <- function(x){
+  print('frequencies')
+  print(table(dt_pl[,x]))
+  print('numeric frequencies')
+  print(table(as.numeric(dt_pl[,x])))
+  print('NAs frequencies')
+  print(table(is.na(dt_pl[,x])))
+
+}
+
 # Demographics - - - -
+# 
 # P3038 romantic attraction
+# 
+frec('P3038')
+dt_pl$P3038 <- as.numeric(dt_pl$P3038)
+dt_pl$hetero <- NA
+dt_pl$hetero[dt_pl$P3038 < 3 ] <- 1
+dt_pl$hetero[dt_pl$P3038 > 2 ] <- 0
+table(dt_pl$hetero)
+
 # P220 sex
+# 
+frec('P220')
+dt_pl$P220 <- as.numeric(dt_pl$P220)
+dt_pl$P220[dt_pl$P220 == 2 ] <- 0
+
 # P3039 gender
+# 
+frec('P3039')
+dt_pl$P3039 <- as.numeric(dt_pl$P3039)
+dt_pl$cis <- NA
+dt_pl$cis[dt_pl$P3039 < 3 ] <- 1
+dt_pl$cis[dt_pl$P3039 > 2 ] <- 0
+frec('cis')
+
 # P5785 age
+# 
+frec('P5785')
+dt_pl$old <- 0
+dt_pl$old[dt_pl$P5785 > 59] <- 1
+frec('old')
+
 # Clase household type
+# 
+frec('Clase')
+table(is.na(dt_pl$Clase))
+dt_pl$Clase[dt_pl$Clase == 'Cabecera'] <- 1
+dt_pl$Clase[dt_pl$Clase == 'Centro poblado y rur'] <- 0
+
 # P1988 electricity in the household
+# 
+frec('P1988')
+dt_pl$P1988 <- as.numeric(dt_pl$P1988)
+dt_pl$P1988[dt_pl$P1988 == 2] <- 0
+
 # P1988S1 household strata
+# 
+frec('P1988S1')
+dt_pl$strata <- 0
+dt_pl$strata[dt_pl$P1988S1 > 3 ] <- 1
+frec('strata')
+table(dt_pl$strata, dt_pl$P1988S1)
+
 # P1989 household ownership
+# 
+frec('P1989')
+dt_pl$ownedh <- 0
+dt_pl$ownedh[dt_pl$P1989 == 'Propia' ] <- 1
+table( dt_pl$P1989,dt_pl$ownedh)
+
 # P3303 internet access/connection in the last year
 # P6080 self recognition
 # P6210 highest educational level achieved
+# 
+dt_pl$edug <- 0
+dt_pl$edug[dt_pl$P6210 == 'Superior o Universitaria' ] <- 1
+dt_pl$edug[dt_pl$P6210 == 'Media (10-13)' ] <- 1
+dt_pl$edug <- factor(dt_pl$edug)
+
+table(dt_pl$edug)
+
 # P6210S1 education degree
+# 
 # P1366 Marital status
+# 
+frec('P1366')
+dt_pl$single <- 0
+dt_pl$single[dt_pl$P1366 == 'Está separado(a) o divorciado(a)' ] <- 1
+dt_pl$single[dt_pl$P1366 == 'Está soltero(a)' ] <- 1
+dt_pl$single[dt_pl$P1366 == 'Está viudo(a)' ] <- 1
+table(dt_pl$P1366,dt_pl$single)
+
 # P756 Birth place
+# 
+# 
+frec('P756')
+dt_pl$born_col <- 0
+dt_pl$born_col[dt_pl$P756 != 'En otro país' ] <- 1
+table(dt_pl$P756,dt_pl$born_col)
 
 # Disabilities - - - - 
 # P1906S1 hearing
@@ -140,6 +228,39 @@ dt_pl <- dt_pl[dt_pl$P5785 > 14,]
 # P1906S7 self maintenance
 # P1906S8 social interactions
 # P1906S9 respiratory and heart limitations
+# 
+dis <- c(
+ 'P1906S1', 
+ 'P1906S2', 
+ 'P1906S3',
+ 'P1906S4',
+ 'P1906S5',
+ 'P1906S6',
+ 'P1906S7',
+ 'P1906S8',
+ 'P1906S9')
+
+for (i in 1:length(dis)){
+  disi <- dis[i]
+  dt_pl[,paste0(disi,'_',i)] <- as.numeric(dt_pl[,disi])
+  print(frec(paste0(disi,'_',i)))
+  dt_pl[,paste0(disi,'_',i)][dt_pl[,paste0(disi,'_',i)] < 4] <- 1
+  dt_pl[,paste0(disi,'_',i)][dt_pl[,paste0(disi,'_',i)] == 4] <- 0
+  
+  print(table(dt_pl[,disi],dt_pl[,paste0(disi,'_',i)]))
+  
+}
+
+dt_pl$dis <- rowSums(dt_pl[paste0(dis,'_',seq(1:length(dis)))], na.rm = TRUE)
+dt_pl$dis  <- dt_pl$dis / dt_pl$dis 
+dt_pl$dis[is.na(dt_pl$dis) == TRUE] <- 0
+
+frec('dis')
+
+for (i in 1:length(dis)){
+  print(table(dt_pl[,dis[i]],dt_pl$dis))
+  print(table(dt_pl[,dis[i]]))
+}
 
 # Socio economic - - - -
 # 
@@ -222,10 +343,7 @@ dt_pl <- dt_pl[dt_pl$P5785 > 14,]
 
 ## Education ---------------------------------------------------------------------------------------
 ##
-dt_pl$edug <- 0
-dt_pl$edug[dt_pl$P6210 == 'Superior o Universitaria' ] <- 1
-dt_pl$edug[dt_pl$P6210 == 'Media (10-13)' ] <- 1
-dt_pl$edug <- factor(dt_pl$edug)
+
 
 ## Victimization variable rebuild 2022/2021 ---------------------------------------------------------
 ## 
