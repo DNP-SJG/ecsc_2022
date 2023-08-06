@@ -265,16 +265,89 @@ for (i in 1:length(dis)){
 # Socio economic - - - -
 # 
 # P1365 activities (work)
+# 
+frec('P1365')
+dt_pl$pea <- 0
+dt_pl$pea[dt_pl$P1365 == 'Trabajando' ] <- 1
+dt_pl$pea[dt_pl$P1365 == 'Buscando trabajo' ] <- 1
+
+table(dt_pl$P1365,dt_pl$pea)
+frec('pea')
+
 # P3105 security perception (local)
+# 
+frec('P3105')
+dt_pl$safe_local <- 0
+dt_pl$safe_local[dt_pl$P3105 == 'Muy Seguro(a)' ] <- 1
+dt_pl$safe_local[dt_pl$P3105 == 'Seguro(a)' ] <- 1
+
+table(dt_pl$P3105,dt_pl$safe_local)
+frec('safe_local')
+
 # P3106 security perception when walking alone at night
+# 
+frec('P3106')
+dt_pl$safe_WaN <- 0
+dt_pl$safe_WaN[dt_pl$P3106 == ' Muy seguro(a)' ] <- 1
+dt_pl$safe_WaN[dt_pl$P3106 == 'Seguro(a)' ] <- 1
+
+table(dt_pl$P3106,dt_pl$safe_WaN)
+frec('safe_WaN')
+
 # P3107 security perception (municipality/city)
+# 
+frec('P3107')
+dt_pl$safe_city <- 0
+dt_pl$safe_city[dt_pl$P3107 == 'Muy Seguro(a)' ] <- 1
+dt_pl$safe_city[dt_pl$P3107 == 'Seguro(a)' ] <- 1
+
+table(dt_pl$P3107,dt_pl$safe_city)
+frec('safe_city')
+
 # P564 prospects on being a victim in the future
+#
+frec('P564')
+dt_pl$P564 <- as.numeric(dt_pl$P564)
+dt_pl$P564[dt_pl$P564 == 2 ] <- 0
+
+# Subjective Well-being - - - -
+#
 # P3503S1 SWB life
 # P3503S2 SWB health
 # P3503S3 SWB economic outlook
 # P3503S4 SWB work
 # P3503S5 SWB emotional outlook
 # P3503S6 SWB relationships
+
+swvars <- c('P3503S1','P3503S2','P3503S3','P3503S4','P3503S5','P3503S6')
+
+lapply(swvars, function(x){
+  print(table(dt_pl[,x]))
+  print(table(is.na(dt_pl[,x])))})
+
+for (i in 1:length(swvars)){
+  swbi <- swvars[i]
+  dt_pl[,paste0(swbi,'_',i)] <- as.numeric(dt_pl[,swbi])
+  dt_pl[,paste0(swbi,'_',i)][dt_pl[,paste0(swbi,'_',i)] == 9] <- NA
+  print(frec(paste0(swbi,'_',i)))
+  dt_pl[,paste0(swbi,'_',i)][dt_pl[,paste0(swbi,'_',i)] < 4] <- 1
+  dt_pl[,paste0(swbi,'_',i)][dt_pl[,paste0(swbi,'_',i)] > 3] <- 0
+  
+  print(table(dt_pl[,swbi],dt_pl[,paste0(swbi,'_',i)]))
+  
+}
+
+dt_pl$swbi <- rowSums(dt_pl[paste0(swvars,'_',seq(1:length(swvars)))], na.rm = FALSE)
+dt_pl$swbi[dt_pl$swbi > 0] <- 1
+table(dt_pl$swbi)
+
+for (i in 1:length(swvars)){
+  # print(table(dt_pl[,swvars[i]],dt_pl$swbi))
+   print(table(dt_pl[,swvars[i]]))
+  # print(table(dt_pl[,swvars[i]],is.na(dt_pl$swbi)))
+}
+
+table(is.na(dt_pl$swbi))
 
 # Street abuse and sexual abuse experiences - - - -
 # 
@@ -288,6 +361,42 @@ for (i in 1:length(dis)){
 # P3302S8 sexual public exhibition
 # P1976S13 street sexual harassment 
 # P1976S14 sexual violence or aggression
+# 
+
+abuse <- c(
+  'P3302S1', 
+  'P3302S2', 
+  'P3302S3',
+  'P3302S4',
+  'P3302S5',
+  'P3302S6',
+  'P3302S7',
+  'P1976S13',
+  'P1976S14')
+
+for (i in 1:length(abuse)){
+  abusei <- abuse[i]
+  dt_pl[,paste0(abusei,'_',i)] <- as.numeric(dt_pl[,abusei])
+  print(frec(paste0(abusei,'_',i)))
+  dt_pl[,paste0(abusei,'_',i)][dt_pl[,paste0(abusei,'_',i)] == 3] <- NA
+  dt_pl[,paste0(abusei,'_',i)][dt_pl[,paste0(abusei,'_',i)] == 2] <- 0
+  
+  print(table(dt_pl[,abusei],dt_pl[,paste0(abusei,'_',i)]))
+  
+}
+
+dt_pl$abuse <- rowSums(dt_pl[paste0(abuse,'_',seq(1:length(abuse)))], na.rm = FALSE)
+table(dt_pl$abuse)
+
+dt_pl$abuse[dt_pl$abuse > 0] <- 1
+
+frec('abuse')
+
+for (i in 1:length(abuse)){
+  print(table(dt_pl[,abuse[i]],dt_pl$abuse))
+  print(table(dt_pl[,abuse[i]]))
+}
+ 
 
 # Crimes and victimization - - - -
 #
@@ -306,12 +415,78 @@ for (i in 1:length(dis)){
 # P1286 extortion
 # P1976S1 other
 
+table(dt_pl$vic); table(is.na(dt_pl$vic))
+dt_pl$vic[is.na(dt_pl$vic)] <- 0 # As the Vic variable was build under the declaration table
+# all individuals who experienced a Vic circumstance  also declared JP. This is a problem.
+
+tonumber <- function(x){as.numeric(dt_pl[,x])}
+vicvars <- c('P541', 'P523','P525','P526','P528','P1959','P1956',#2022
+             'P1392','P1960','P1179','P1343','P1315','P1286','P1976S1' #2021
+)
+
+table(dt_plx$P541)
+table(is.na(dt_plx$P541))
+
+num <- lapply(vicvars, tonumber)
+names(num) <- vicvars
+
+lapply(vicvars, function(x){table(is.na(dt_pl[,x]))})
+
+for(i in 1:length(vicvars)){
+  var <- vicvars[i]
+  dt_pl[,var] <- num[[i]]
+  print(table(dt_pl[,var]))
+  dt_pl[,var][dt_pl[,var] == 2] <- 0
+  print(table(dt_pl[,var]))
+}
+
+rm(tonumber,num,i,vicvars)
+dt_pl$vic_2022 <- rowSums(dt_pl[c("P541",
+                                  "P523",
+                                  "P525",
+                                  "P526",
+                                  "P528",
+                                  "P1959",
+                                  "P1956"
+)], na.rm = FALSE)
+
+dt_pl$vic_2021 <- rowSums(dt_pl[c('P1392',
+                                  'P1960',
+                                  'P1179',
+                                  'P1343',
+                                  'P1315',
+                                  'P1286',
+                                  'P1976S1'
+)], na.rm = FALSE)
+
+table(dt_pl$vic_2022)
+table(dt_pl$vic_2021)
+
+table(is.na(dt_pl$vic_2021))
+table(is.na(dt_pl$vic_2022),dt_pl$P5785)
+
+table(dt_pl$vic_2021)
+
+dt_pl$vic_2021[dt_pl$vic_2021 > 0] <- 1
+dt_pl$vic_2022[dt_pl$vic_2022 > 0] <- 1
+
+sum(dt_pl$FEX_C[dt_pl$vic_2022 != 0],na.rm = TRUE)
+sum(dt_pl$FEX_C[dt_pl$vic_2021 != 0], na.rm = TRUE)
+
+table(dt_pl$vic_2021,dt_pl$jp)
+table(dt_pl$vic_2022,dt_pl$jp)
+
+
 # Physical aggression - - - -
 # 
 # P3115S1 push
 # P3115S2 hit
 # P3115S3 object/weapon
 # P3115S4 other
+
+
+
+
 
 # Crime reporting - - - -
 #
@@ -347,62 +522,7 @@ for (i in 1:length(dis)){
 
 ## Victimization variable rebuild 2022/2021 ---------------------------------------------------------
 ## 
-table(dt_pl$vic); table(is.na(dt_pl$vic))
-dt_pl$vic[is.na(dt_pl$vic)] <- 0 # As the Vic variable was build under the declaration table
-# all individuals who experienced a Vic circumstance  also declared JP. This is a problem.
-
-tonumber <- function(x){as.numeric(dt_pl[,x])}
-vicvars <- c('P541', 'P523','P525','P526','P528','P1959','P1956',#2022
-             'P1392','P1960','P1179','P1343','P1315','P1286','P1976S1' #2021
-             )
-
-num <- lapply(vicvars, tonumber)
-names(num) <- vicvars
-
-for(i in 1:length(vicvars)){
-  var <- vicvars[i]
-  dt_pl[,var] <- num[[i]]
-  print(table(dt_pl[,var]))
-  dt_pl[,var][dt_pl[,var] == 2] <- 0
-  print(table(dt_pl[,var]))
-  }
-
-rm(tonumber,num,i,vicvars)
-dt_pl$vic_2022 <- rowSums(dt_pl[c("P541",
-                                  "P523",
-                                  "P525",
-                                  "P526",
-                                  "P528",
-                                  "P1959",
-                                  "P1956"
-)], na.rm = TRUE)
-
-dt_pl$vic_2021 <- rowSums(dt_pl[c('P1392',
-                                  'P1960',
-                                  'P1179',
-                                  'P1343',
-                                  'P1315',
-                                  'P1286',
-                                  'P1976S1'
-)], na.rm = TRUE)
-
-table(dt_pl$vic_2022)
-table(dt_pl$vic_2021)
-
-table(is.na(dt_pl$vic_2021))
-table(is.na(dt_pl$vic_2022))
-
-dt_pl$vic_2022 <- dt_pl$vic_2022/dt_pl$vic_2022
-dt_pl$vic_2021 <- dt_pl$vic_2021/dt_pl$vic_2021
-
-dt_pl$vic_2022[is.nan(dt_pl$vic_2022)] <- 0
-dt_pl$vic_2021[is.nan(dt_pl$vic_2021)] <- 0
-
-sum(dt_pl$FEX_C[dt_pl$vic_2022 != 0])
-sum(dt_pl$FEX_C[dt_pl$vic_2021 != 0])
-
-table(dt_pl$vic_2021,dt_pl$jp)
-table(dt_pl$vic_2022,dt_pl$jp) 
+ 
 
 ## Subjective well-being ----------------------------------------------------------------------------
 ## 
