@@ -618,7 +618,7 @@ svars <- c(
 'old', # age
 'single', # Marital status
 'edug' ,# highest educational level achieved
-'P3303', # ethnic recognition
+'recon', # ethnic recognition
 'dis', # at least one kind of disabilities
 'born_col', # born in Colombia
 'Clase' ,# rural urban class
@@ -627,25 +627,16 @@ svars <- c(
 'ownedh', # household ownership
 'P3303') # internet connection
 
-table(dt_pl$P1366)
+table(dt_pl$P6080)
 
 lapply(svars, function(x) {table(dt_pl[dt_pl$a18 == 1,x])})
 
-x <- svars[1]
 dt <- dt_pl[dt_pl$a18 == 1, ]
-table(dt$old)
-
-lapply(df_list, function(x) {
-  aggregate(list(B = x$B), list(A = x$A), sum)
-})
-
 
 stats1 <- lapply(svars, function(x) {
              wilcox.test(
                      dt[ is.na(dt[x]) == FALSE,'jp'] ~ 
-                     dt[ is.na(dt[x]) == FALSE,x]
-                        
-                        )
+                     dt[ is.na(dt[x]) == FALSE,x])
   })
 
 stats2 <- list()
@@ -663,24 +654,52 @@ stats2[[i]] <- as.data.frame(
 names(stats1) <- svars
 names(stats2) <- svars
 
+stats_dt1 <- data.frame(
+  statistic = NA,
+  p.value = NA, 
+  null.value = NA, 
+  alternative = NA,
+  variable = NA
+  
+)
 
-mean(dt$pj[dt$P220 == 'Mujer'& dt$a18 == 1 & is.na(dt$P1988S1) == FALSE ])
-mean(dt$pj[dt$P220 == 'Hombre'& dt$a18 == 1 & is.na(dt$P1988S1) == FALSE ])
+for (i in 1:length(svars)) {
+  aux_dt <-  data.frame(
+    statistic = stats1[[i]]$statistic,
+    p.value = round(stats1[[i]]$p.value,4), 
+    null.value = as.character(stats1[[i]]$null.value), 
+    alternative = stats1[[i]]$alternative
+  )
+  
+  aux_dt$variable <- svars[i]
+  stats_dt1 <- rbind(stats_dt1,aux_dt)
+  rm(aux_dt)
+}
 
+stats_dt2 <- data.frame(
+                       cat = NA,
+                       variable = NA,
+                       n = NA, 
+                       mean = NA, 
+                       sd = NA,
+                       se = NA
+                       )
 
+for (i in 1:length(svars)) {
+  aux_dt <- as.data.frame(stats2[[i]])
+  names(aux_dt) <- names(stats_dt2)
+  aux_dt$variable <- svars[i]
+  stats_dt2 <- rbind(stats_dt2,aux_dt)
+  
+  rm(aux_dt)
 
-# Class
-wilcox.test(pj ~ Clase, data = dt[dt$a18 == 1,], exact = FALSE)
-wilcox.test(jp ~ Clase, data = dt_pl[dt_pl$a18 == 1,], exact = FALSE)
+}
 
-dt_pl[dt_pl$a18 == 1,] |> group_by(Clase) |> summarise(pj = mean(jp) )
+stats_dt1 <- stats_dt1[is.na(stats_dt1$statistic) == FALSE,]
+stats_dt2 <- stats_dt2[is.na(stats_dt2$cat) == FALSE,]
+stats_dt2 <- merge(stats_dt1,stats_dt2, all.y = TRUE)
 
-# Sex
-wilcox.test(pj ~ P220, data = dt[dt$a18 == 1,], exact = FALSE)
-wilcox.test(jp ~ P220, data = dt_pl[dt_pl$a18 == 1,], exact = FALSE)
-
-
-
+openxlsx::write.xlsx(stats_dt2, 'stats_dt2.xlsx')
 # 01. CLASS, AGE MARGIN, SEX, DECLARATION ----------------------------------------------------------
 # Sandkey
 
