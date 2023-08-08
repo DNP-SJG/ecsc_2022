@@ -91,7 +91,7 @@ dt_pl <- merge(dt_pl, cap_list[['rinas_peleas.dta']][c('keyc','P1294','P1227')],
 
 rm(i,pat,cap_lab,cap_list,files_f)
 dt_plx  <- dt_pl
-dt_pl  <- dt_plx 
+dt_pl <- dt_plx
 
 ## Justiciable problem count and id ----------------------------------------------------------------
 ## 
@@ -179,7 +179,7 @@ dt_pl$P1988[dt_pl$P1988 == 2] <- 0
 frec('P1988S1')
 dt_pl$strata <- NA
 dt_pl$strata[dt_pl$P1988S1 > 3 ] <- 1
-dt_pl$strata[dt_pl$P1988S1 < 4 ] <- 1
+dt_pl$strata[dt_pl$P1988S1 < 4 ] <- 0
 
 frec('strata')
 table(dt_pl$strata, dt_pl$P1988S1)
@@ -192,7 +192,18 @@ dt_pl$ownedh[dt_pl$P1989 == 'Propia' ] <- 1
 table( dt_pl$P1989,dt_pl$ownedh)
 
 # P3303 internet access/connection in the last year
+# 
+frec('P3303')
+dt_pl$P3303 <- as.numeric(dt_pl$P3303)
+dt_pl$P3303[dt_pl$P3303 == 2 ] <- 0
+
 # P6080 self recognition
+# 
+frec('P6080')
+dt_pl$recon <- 0
+dt_pl$recon[dt_pl$P6080 != 'Ninguno de los anteriores' ] <- 1
+table(dt_pl$recon, dt_pl$P6080)
+
 # P6210 highest educational level achieved
 # 
 frec('P6210')
@@ -543,7 +554,7 @@ frec('physicalviolence')
 
 reportvars <- c('P1228','P2073','P1238','P1324','P1294','P1187')
 crimevars  <- c('P1392','P1960','P1179','P1343','P1315','P1286')
-dt_pl <- dt_plx
+
 for (i in 1:length(reportvars)){print(table(dt_pl[,reportvars[i]],dt_pl[,crimevars[i]]))}
 
 lapply(reportvars, function(x){table(is.na(dt_pl[,x]))})
@@ -596,49 +607,77 @@ for(i in 1:length(conttibutionvars)){
 
 }
 
+# Mean differences --------------------------------------------------------------------------------
+
+## Demographics
+#
+svars <- c(
+'P220' ,# sex
+'hetero', # romantic attraction
+'cis' ,# gender
+'old', # age
+'single', # Marital status
+'edug' ,# highest educational level achieved
+'P3303', # ethnic recognition
+'dis', # at least one kind of disabilities
+'born_col', # born in Colombia
+'Clase' ,# rural urban class
+'P1988' ,# electricity in the household
+'strata' , # utilities strata
+'ownedh', # household ownership
+'P3303') # internet connection
+
+table(dt_pl$P1366)
+
+lapply(svars, function(x) {table(dt_pl[dt_pl$a18 == 1,x])})
+
+x <- svars[1]
+dt <- dt_pl[dt_pl$a18 == 1, ]
+table(dt$old)
+
+lapply(df_list, function(x) {
+  aggregate(list(B = x$B), list(A = x$A), sum)
+})
 
 
-## Subjective well-being ----------------------------------------------------------------------------
-## 
+stats1 <- lapply(svars, function(x) {
+             wilcox.test(
+                     dt[ is.na(dt[x]) == FALSE,'jp'] ~ 
+                     dt[ is.na(dt[x]) == FALSE,x]
+                        
+                        )
+  })
 
-swvars <- c('P3503S1','P3503S2','P3503S3','P3503S4','P3503S5','P3503S6')
-swvarsl <- c('la vida en general','su estado de salud','su situación económica',
-             'su situación laboral','su vida emocional','sus relaciones interpersonales')
+stats2 <- list()
 
-lapply(swvars, function(x){table(dt_pl[,x])})
+for (i in 1:length(svars)) {
+x <-  svars[i]
 
-for(i in 1:length(swvars)){
-  print(table(dt_pl[,var]))
-  var <- swvars[i]
-  dt_pl[,var][is.na(dt_pl[,var]) == TRUE] <- 0
-  print(table(dt_pl[,var]))
-  print(table(dt_pl$P5785,dt_pl[,var]))
+stats2[[i]] <- as.data.frame(
+  dt[ is.na(dt[x]) == FALSE,] |>
+  group_by(across(all_of(x))) |>
+  get_summary_stats(jp,show = c("mean", "sd", "se")))
+
 }
 
+names(stats1) <- svars
+names(stats2) <- svars
 
-for (i in 1:length(swvars)) {
-  
-x <- swvars[i]
 
-p <- ggplot(dt_pl[dt_pl[,x] != 0 & dt_pl[,x] != 9,], 
-       aes(x = dt_pl[,x][dt_pl[,x] != 0 & dt_pl[,x] != 9], 
-                after_stat(density), fill = as.factor(jp))) +
-  geom_histogram( bins = 5,alpha = 0.7, position = "identity") + 
-  scale_color_manual(values=c( "#E7B800", "#00AFBB"))+
-  scale_fill_manual('',
-                    values=c( "#E7B800", "#00AFBB"),
-                    labels=c("No declarante","Declarante"))+
-  theme_minimal() + 
-  theme(legend.position="top") +
-  labs(x= paste0('Valoracion subjetiva de ',swvarsl[i]), y = "Densidad")
+mean(dt$pj[dt$P220 == 'Mujer'& dt$a18 == 1 & is.na(dt$P1988S1) == FALSE ])
+mean(dt$pj[dt$P220 == 'Hombre'& dt$a18 == 1 & is.na(dt$P1988S1) == FALSE ])
 
-print(p)
-rm(p)
-}
 
-## Exposure to physical violence  ------------------------------------------------------------------
-## 
 
+# Class
+wilcox.test(pj ~ Clase, data = dt[dt$a18 == 1,], exact = FALSE)
+wilcox.test(jp ~ Clase, data = dt_pl[dt_pl$a18 == 1,], exact = FALSE)
+
+dt_pl[dt_pl$a18 == 1,] |> group_by(Clase) |> summarise(pj = mean(jp) )
+
+# Sex
+wilcox.test(pj ~ P220, data = dt[dt$a18 == 1,], exact = FALSE)
+wilcox.test(jp ~ P220, data = dt_pl[dt_pl$a18 == 1,], exact = FALSE)
 
 
 
@@ -765,3 +804,43 @@ output <- dt_pl |>
 output
 
 
+
+
+
+## Subjective well-being ----------------------------------------------------------------------------
+## 
+
+swvars <- c('P3503S1','P3503S2','P3503S3','P3503S4','P3503S5','P3503S6')
+swvarsl <- c('la vida en general','su estado de salud','su situación económica',
+             'su situación laboral','su vida emocional','sus relaciones interpersonales')
+
+lapply(swvars, function(x){table(dt_pl[,x])})
+
+for(i in 1:length(swvars)){
+  print(table(dt_pl[,var]))
+  var <- swvars[i]
+  dt_pl[,var][is.na(dt_pl[,var]) == TRUE] <- 0
+  print(table(dt_pl[,var]))
+  print(table(dt_pl$P5785,dt_pl[,var]))
+}
+
+
+for (i in 1:length(swvars)) {
+  
+  x <- swvars[i]
+  
+  p <- ggplot(dt_pl[dt_pl[,x] != 0 & dt_pl[,x] != 9,], 
+              aes(x = dt_pl[,x][dt_pl[,x] != 0 & dt_pl[,x] != 9], 
+                  after_stat(density), fill = as.factor(jp))) +
+    geom_histogram( bins = 5,alpha = 0.7, position = "identity") + 
+    scale_color_manual(values=c( "#E7B800", "#00AFBB"))+
+    scale_fill_manual('',
+                      values=c( "#E7B800", "#00AFBB"),
+                      labels=c("No declarante","Declarante"))+
+    theme_minimal() + 
+    theme(legend.position="top") +
+    labs(x= paste0('Valoracion subjetiva de ',swvarsl[i]), y = "Densidad")
+  
+  print(p)
+  rm(p)
+}
