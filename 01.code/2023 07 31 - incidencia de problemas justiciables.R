@@ -143,6 +143,7 @@ table(dt_pl$hetero)
 frec('P220')
 dt_pl$P220 <- as.numeric(dt_pl$P220)
 dt_pl$P220[dt_pl$P220 == 2 ] <- 0
+table(dt_pl$P220)
 
 # P3039 gender
 # 
@@ -176,8 +177,10 @@ dt_pl$P1988[dt_pl$P1988 == 2] <- 0
 # P1988S1 household strata
 # 
 frec('P1988S1')
-dt_pl$strata <- 0
+dt_pl$strata <- NA
 dt_pl$strata[dt_pl$P1988S1 > 3 ] <- 1
+dt_pl$strata[dt_pl$P1988S1 < 4 ] <- 1
+
 frec('strata')
 table(dt_pl$strata, dt_pl$P1988S1)
 
@@ -192,19 +195,25 @@ table( dt_pl$P1989,dt_pl$ownedh)
 # P6080 self recognition
 # P6210 highest educational level achieved
 # 
-dt_pl$edug <- 0
+frec('P6210')
+table(dt_pl$P5785[is.na(dt_pl$P6210) == TRUE])
+dt_pl$edug <- 0 # all individuals under 14 have NAs in this feature
+dt_pl$edug[dt_pl$P5785 < 15] <- NA
 dt_pl$edug[dt_pl$P6210 == 'Superior o Universitaria' ] <- 1
 dt_pl$edug[dt_pl$P6210 == 'Media (10-13)' ] <- 1
 dt_pl$edug <- factor(dt_pl$edug)
 
 table(dt_pl$edug)
+frec('edug')
 
 # P6210S1 education degree
 # 
 # P1366 Marital status
 # 
 frec('P1366')
-dt_pl$single <- 0
+table(dt_pl$P5785[is.na(dt_pl$P1366) == TRUE])
+dt_pl$single <- 0 # all individuals under 14 have NAs in this feature
+dt_pl$single[dt_pl$P5785 < 15] <- NA
 dt_pl$single[dt_pl$P1366 == 'Está separado(a) o divorciado(a)' ] <- 1
 dt_pl$single[dt_pl$P1366 == 'Está soltero(a)' ] <- 1
 dt_pl$single[dt_pl$P1366 == 'Está viudo(a)' ] <- 1
@@ -214,7 +223,9 @@ table(dt_pl$P1366,dt_pl$single)
 # 
 # 
 frec('P756')
-dt_pl$born_col <- 0
+table(dt_pl$P5785[is.na(dt_pl$P756) == TRUE])
+dt_pl$born_col <- 0 # all individuals under 14 have NAs in this feature
+dt_pl$dt_pl[dt_pl$P5785 < 15] <- NA
 dt_pl$born_col[dt_pl$P756 != 'En otro país' ] <- 1
 table(dt_pl$P756,dt_pl$born_col)
 
@@ -241,6 +252,11 @@ dis <- c(
  'P1906S9')
 
 for (i in 1:length(dis)){
+  print(frec(dis[i]))
+}
+
+
+for (i in 1:length(dis)){
   disi <- dis[i]
   dt_pl[,paste0(disi,'_',i)] <- as.numeric(dt_pl[,disi])
   print(frec(paste0(disi,'_',i)))
@@ -254,13 +270,8 @@ for (i in 1:length(dis)){
 dt_pl$dis <- rowSums(dt_pl[paste0(dis,'_',seq(1:length(dis)))], na.rm = TRUE)
 dt_pl$dis  <- dt_pl$dis / dt_pl$dis 
 dt_pl$dis[is.na(dt_pl$dis) == TRUE] <- 0
-
+dt_pl$dis[dt_pl$P5785 < 15] <- NA
 frec('dis')
-
-for (i in 1:length(dis)){
-  print(table(dt_pl[,dis[i]],dt_pl$dis))
-  print(table(dt_pl[,dis[i]]))
-}
 
 # Socio economic - - - -
 # 
@@ -272,6 +283,8 @@ dt_pl$pea[dt_pl$P1365 == 'Trabajando' ] <- 1
 dt_pl$pea[dt_pl$P1365 == 'Buscando trabajo' ] <- 1
 
 table(dt_pl$P1365,dt_pl$pea)
+dt_pl$pea[dt_pl$P5785 < 15] <- NA
+
 frec('pea')
 
 # P3105 security perception (local)
@@ -282,6 +295,7 @@ dt_pl$safe_local[dt_pl$P3105 == 'Muy Seguro(a)' ] <- 1
 dt_pl$safe_local[dt_pl$P3105 == 'Seguro(a)' ] <- 1
 
 table(dt_pl$P3105,dt_pl$safe_local)
+dt_pl$safe_local[dt_pl$P5785 < 15] <- NA
 frec('safe_local')
 
 # P3106 security perception when walking alone at night
@@ -292,6 +306,7 @@ dt_pl$safe_WaN[dt_pl$P3106 == ' Muy seguro(a)' ] <- 1
 dt_pl$safe_WaN[dt_pl$P3106 == 'Seguro(a)' ] <- 1
 
 table(dt_pl$P3106,dt_pl$safe_WaN)
+dt_pl$safe_WaN[dt_pl$P5785 < 15] <- NA
 frec('safe_WaN')
 
 # P3107 security perception (municipality/city)
@@ -302,6 +317,7 @@ dt_pl$safe_city[dt_pl$P3107 == 'Muy Seguro(a)' ] <- 1
 dt_pl$safe_city[dt_pl$P3107 == 'Seguro(a)' ] <- 1
 
 table(dt_pl$P3107,dt_pl$safe_city)
+dt_pl$safe_city[dt_pl$P5785 < 15] <- NA
 frec('safe_city')
 
 # P564 prospects on being a victim in the future
@@ -309,6 +325,7 @@ frec('safe_city')
 frec('P564')
 dt_pl$P564 <- as.numeric(dt_pl$P564)
 dt_pl$P564[dt_pl$P564 == 2 ] <- 0
+dt_pl$P564[dt_pl$P5785 < 15] <- NA
 
 # Subjective Well-being - - - -
 #
@@ -348,6 +365,7 @@ for (i in 1:length(swvars)){
 }
 
 table(is.na(dt_pl$swbi))
+table(dt_pl$P5785[is.na(dt_pl$swbi) == TRUE])
 
 # Street abuse and sexual abuse experiences - - - -
 # 
@@ -387,7 +405,6 @@ for (i in 1:length(abuse)){
 
 dt_pl$abuse <- rowSums(dt_pl[paste0(abuse,'_',seq(1:length(abuse)))], na.rm = FALSE)
 table(dt_pl$abuse)
-
 dt_pl$abuse[dt_pl$abuse > 0] <- 1
 
 frec('abuse')
@@ -397,7 +414,6 @@ for (i in 1:length(abuse)){
   print(table(dt_pl[,abuse[i]]))
 }
  
-
 # Crimes and victimization - - - -
 #
 # P541 household theft 2022
@@ -424,8 +440,6 @@ vicvars <- c('P541', 'P523','P525','P526','P528','P1959','P1956',#2022
              'P1392','P1960','P1179','P1343','P1315','P1286','P1976S1' #2021
 )
 
-table(dt_plx$P541)
-table(is.na(dt_plx$P541))
 
 num <- lapply(vicvars, tonumber)
 names(num) <- vicvars
@@ -476,6 +490,12 @@ sum(dt_pl$FEX_C[dt_pl$vic_2021 != 0], na.rm = TRUE)
 table(dt_pl$vic_2021,dt_pl$jp)
 table(dt_pl$vic_2022,dt_pl$jp)
 
+table(dt_pl$P5785[is.na(dt_pl$vic_2022) == TRUE])
+table(dt_pl$P5785[is.na(dt_pl$vic_2021) == TRUE])
+
+frec('vic_2022')
+table(dt_pl$P5785)
+frec('vic_2021')
 
 # Physical aggression - - - -
 # 
@@ -484,9 +504,27 @@ table(dt_pl$vic_2022,dt_pl$jp)
 # P3115S3 object/weapon
 # P3115S4 other
 
+phyvars <- c('P3115S1','P3115S2','P3115S3','P3115S4')
 
+lapply(phyvars, function(x){table(is.na(dt_pl[,x]))})
+lapply(phyvars, function(x){table((dt_pl[,x]))})
 
+for(i in 1:length(phyvars)){
+  var <- phyvars[i]
+  dt_pl[,var] <- as.numeric(dt_pl[,var] )
+  print(table(dt_pl[,var]))
+  print(table(is.na(dt_pl[,var])))
+  dt_pl[,var][dt_pl[,var] == 2] <- 0
+  print(table(dt_pl[,var]))
+}
 
+dt_pl$physicalviolence <- rowSums(dt_pl[,phyvars], na.rm = FALSE)
+dt_pl$physicalviolence[dt_pl$physicalviolence > 0 ] <- 1
+table(dt_pl$physicalviolence)
+
+rm(phyvars,var,i)
+dt_pl$physicalviolence[dt_pl$P5785 < 15] <- NA
+frec('physicalviolence')
 
 # Crime reporting - - - -
 #
@@ -503,6 +541,36 @@ table(dt_pl$vic_2022,dt_pl$jp)
 # P1187 extortion
 # P1106 extortion reasons to avoid reporting
 
+reportvars <- c('P1228','P2073','P1238','P1324','P1294','P1187')
+crimevars  <- c('P1392','P1960','P1179','P1343','P1315','P1286')
+dt_pl <- dt_plx
+for (i in 1:length(reportvars)){print(table(dt_pl[,reportvars[i]],dt_pl[,crimevars[i]]))}
+
+lapply(reportvars, function(x){table(is.na(dt_pl[,x]))})
+lapply(reportvars, function(x){table((dt_pl[,x]))})
+
+for(i in 1:length(reportvars)){
+  var <- reportvars[i]
+  dt_pl[,var] <- as.numeric(dt_pl[,var] )
+  dt_pl[,var][dt_pl[,var] == 2] <- 0
+  print(table(dt_pl[,var]))
+  print(class(dt_pl[,var]))
+
+}
+dt_pl$crimereporting <- rowSums(dt_pl[reportvars],na.rm = TRUE)
+table((dt_pl$crimereporting))
+
+dt_pl$crimereporting[dt_pl$vic == 0 ] <- NA
+dt_pl$crimereporting[dt_pl$P5785 < 15 ] <- NA
+dt_pl$crimereporting[dt_pl$crimereporting > 0 ] <- 1
+
+table(dt_pl$crimereporting,dt_pl$vic)
+
+dt_pl$physicalviolence[dt_pl$physicalviolence > 0 ] <- 1
+table(dt_pl$physicalviolence)
+
+rm(reportvars,var,i,crimevars)
+
 # Contribution to security - - - - 
 # 
 # P1182S1 Police
@@ -514,15 +582,21 @@ table(dt_pl$vic_2022,dt_pl$jp)
 # P3317S2 Police inspections
 # P3317S3 Conciliation centres
 
+conttibutionvars  <- c('P1182S1','P1182S2','P1182S3','P1181S1','P1181S2','P3317S1','P3317S2','P3317S3')
+
+lapply(conttibutionvars, function(x){table(is.na(dt_pl[,x]))})
+lapply(conttibutionvars, function(x){table((dt_pl[,x]))})
+
+for(i in 1:length(conttibutionvars)){
+  var <- conttibutionvars[i]
+  dt_pl[,var] <- as.numeric(dt_pl[,var] )
+  dt_pl[,var][dt_pl[,var] == 2] <- 0
+  dt_pl[,var][dt_pl[,var] == 3] <- 0
+  print(table(dt_pl[,var]))
+
+}
 
 
-## Education ---------------------------------------------------------------------------------------
-##
-
-
-## Victimization variable rebuild 2022/2021 ---------------------------------------------------------
-## 
- 
 
 ## Subjective well-being ----------------------------------------------------------------------------
 ## 
