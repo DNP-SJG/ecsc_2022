@@ -13,6 +13,7 @@ library(tidyr) # Data management
 library(ggplot2) #Plots
 library(stats)
 library(stringr) # leading zeros and other string work
+library(rstatix) # summary stats
 
 # 00.01 LOADS  AND MERGES CHAPTERS -----------------------------------------------------------------
 
@@ -577,8 +578,7 @@ dt_pl$crimereporting[dt_pl$crimereporting > 0 ] <- 1
 
 table(dt_pl$crimereporting,dt_pl$vic)
 
-dt_pl$physicalviolence[dt_pl$physicalviolence > 0 ] <- 1
-table(dt_pl$physicalviolence)
+table(dt_pl$crimereporting)
 
 rm(reportvars,var,i,crimevars)
 
@@ -609,25 +609,62 @@ for(i in 1:length(conttibutionvars)){
 
 # Mean differences --------------------------------------------------------------------------------
 
-## Demographics
+## Demographics ------------------------------------------------------------------------------------
 #
 svars <- c(
-'P220' ,# sex
-'hetero', # romantic attraction
-'cis' ,# gender
-'old', # age
-'single', # Marital status
-'edug' ,# highest educational level achieved
-'recon', # ethnic recognition
-'dis', # at least one kind of disabilities
+'P220' ,    # sex
+'hetero',   # romantic attraction
+'cis',      # gender
+'old',      # age
+'single',   # Marital status
+'edug' ,    # highest educational level achieved
+'recon',    # ethnic recognition
+'dis',      # at least one kind of disabilities
 'born_col', # born in Colombia
-'Clase' ,# rural urban class
-'P1988' ,# electricity in the household
-'strata' , # utilities strata
-'ownedh', # household ownership
-'P3303') # internet connection
+'Clase' ,   # rural urban class
+'P1988' ,   # electricity in the household
+'strata' ,  # utilities strata
+'ownedh',   # household ownership
+'P3303',    # internet connection
+'pea'       # economically active population
+) 
 
-table(dt_pl$P6080)
+## victimization  ----------------------------------------------------------------------------------
+#
+svars <- c(
+  'safe_local',       # security perception (local)
+  'safe_WaN',         # security perception when walking alone at night
+  'safe_city',        # security perception (municipality/city)
+  'P564',             # prospects on being a victim in the future
+  'abuse',            # street abuse and sexual abuse experiences
+  'vic_2021',         # victimization 2021
+  'vic_2022',         # victimization 2022
+  'physicalviolence', # physical violence
+  'crimereporting'    # crime reporting 
+)
+
+## perception --------------------------------------------------------------------------------------
+#
+svars <- c(
+  'P3503S1_1',  # SWB life
+  'P3503S2_2',  # SWB health
+  'P3503S3_3',  # SWB economic outlook
+  'P3503S4_4',  # SWB work
+  'P3503S5_5',  # SWB emotional outlook
+  'P3503S6_6',  # SWB relationships
+  'swbi',       # At least one under SWB
+  'P1182S1',    #  Police
+  'P1182S2',    #  Military
+  'P1182S3',    #  Major
+  'P1181S1',    #  Prosecutor office
+  'P1181S2',    #  Judges
+  'P3317S1',    #  ICBF
+  'P3317S2',    #  Police inspections
+  'P3317S3',    #  Conciliation centres
+  'safe_local', # security perception (local)
+  'safe_WaN',   # security perception when walking alone at night
+  'safe_city'   # security perception (municipality/city)
+  )
 
 lapply(svars, function(x) {table(dt_pl[dt_pl$a18 == 1,x])})
 
@@ -647,7 +684,7 @@ x <-  svars[i]
 stats2[[i]] <- as.data.frame(
   dt[ is.na(dt[x]) == FALSE,] |>
   group_by(across(all_of(x))) |>
-  get_summary_stats(jp,show = c("mean", "sd", "se")))
+  get_summary_stats(jp,show = c("mean","sd","se")))
 
 }
 
@@ -699,7 +736,8 @@ stats_dt1 <- stats_dt1[is.na(stats_dt1$statistic) == FALSE,]
 stats_dt2 <- stats_dt2[is.na(stats_dt2$cat) == FALSE,]
 stats_dt2 <- merge(stats_dt1,stats_dt2, all.y = TRUE)
 
-openxlsx::write.xlsx(stats_dt2, 'stats_dt2.xlsx')
+openxlsx::write.xlsx(stats_dt2, 'stats_dt4.xlsx')
+
 # 01. CLASS, AGE MARGIN, SEX, DECLARATION ----------------------------------------------------------
 # Sandkey
 
@@ -707,7 +745,9 @@ library(ggsankey)
 library(tidyverse)
 library(ggalluvial)
 
-dt <- dt_pl |> group_by(Clase,a18,P220,jp) |> summarise(pj = sum(FEX_C) )
+dt <- dt_pl[dt_pl$a18 == 1, ] |> group_by(crimereporting) |> summarise(jp = mean(jp) )
+
+
 
 df <- dt_pl[dt_pl$a18 == 1,] |> make_long(Clase,P220,jp)
 dagg <- df|>dplyr::group_by(node)|>tally()
@@ -813,15 +853,6 @@ t.test(pj ~ Clase, data = dt[dt$a18 == 1,], var.equal = TRUE)
 
 dt <- dt_pl |> group_by(Clase,a18,P220,P6210,P5785,P1988S1) |> summarise(pj = mean(jp) )
 
-output <- dt_pl |>
-  select(-keyp) |>
-  group_by(Clase, P220)|>
-  summarize_at(
-    vars(-group_cols(), -Session),
-    list(t.test = ~ list(t.test(. ~ Session))))
-
-output
-
 
 
 
@@ -853,7 +884,7 @@ for (i in 1:length(swvars)) {
                   after_stat(density), fill = as.factor(jp))) +
     geom_histogram( bins = 5,alpha = 0.7, position = "identity") + 
     scale_color_manual(values=c( "#E7B800", "#00AFBB"))+
-    scale_fill_manual('',
+    scale_fill_hmanual('',
                       values=c( "#E7B800", "#00AFBB"),
                       labels=c("No declarante","Declarante"))+
     theme_minimal() + 
