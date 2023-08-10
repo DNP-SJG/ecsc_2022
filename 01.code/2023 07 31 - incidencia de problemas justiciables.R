@@ -3,6 +3,16 @@
 #  2023/07/31
 # ------------------------------------------------------------------------------------------------ #
 
+options(scipen=999)
+
+lib <- c('tidyr','plyr', 'ggplot2','viridis','dplyr',
+         'forcats','hrbrthemes','data.table','curl',
+         'readxl','foreign','ggalt','viridis','Hmisc',
+         'forcats','tidyverse')
+
+lapply(lib, library, character.only = TRUE);rm(lib)
+
+
 library(haven) # Stata file loading/saving
 library(openxlsx)  # Excel file loading/saving
 library(Microsoft365R) # One drive login
@@ -593,7 +603,14 @@ rm(reportvars,var,i,crimevars)
 # P3317S2 Police inspections
 # P3317S3 Conciliation centres
 
-conttibutionvars  <- c('P1182S1','P1182S2','P1182S3','P1181S1','P1181S2','P3317S1','P3317S2','P3317S3')
+conttibutionvars  <- c('P1182S1',
+                       'P1182S2',
+                       'P1182S3',
+                       'P1181S1',
+                       'P1181S2',
+                       'P3317S1',
+                       'P3317S2',
+                       'P3317S3')
 
 lapply(conttibutionvars, function(x){table(is.na(dt_pl[,x]))})
 lapply(conttibutionvars, function(x){table((dt_pl[,x]))})
@@ -601,8 +618,9 @@ lapply(conttibutionvars, function(x){table((dt_pl[,x]))})
 for(i in 1:length(conttibutionvars)){
   var <- conttibutionvars[i]
   dt_pl[,var] <- as.numeric(dt_pl[,var] )
-  dt_pl[,var][dt_pl[,var] == 2] <- 0
-  dt_pl[,var][dt_pl[,var] == 3] <- 0
+  dt_pl[,var][dt_pl[,var] == 1] <- 0
+  dt_pl[,var][dt_pl[,var] == 2] <- 1
+  dt_pl[,var][dt_pl[,var] == 3] <- 1
   print(table(dt_pl[,var]))
 
 }
@@ -611,7 +629,7 @@ for(i in 1:length(conttibutionvars)){
 
 ## Demographics ------------------------------------------------------------------------------------
 #
-svars <- c(
+svars1 <- c(
 'P220' ,    # sex
 'hetero',   # romantic attraction
 'cis',      # gender
@@ -631,21 +649,18 @@ svars <- c(
 
 ## victimization  ----------------------------------------------------------------------------------
 #
-svars <- c(
-  'safe_local',       # security perception (local)
-  'safe_WaN',         # security perception when walking alone at night
-  'safe_city',        # security perception (municipality/city)
+svars2 <- c(
   'P564',             # prospects on being a victim in the future
-  'abuse',            # street abuse and sexual abuse experiences
-  'vic_2021',         # victimization 2021
-  'vic_2022',         # victimization 2022
-  'physicalviolence', # physical violence
-  'crimereporting'    # crime reporting 
+  'abuse'             # street abuse and sexual abuse experiences
+  #'vic_2021',         # victimization 2021
+  #'vic_2022'         # victimization 2022
+  #'physicalviolence', # physical violence
+  #'crimereporting'    # crime reporting 
 )
 
 ## perception --------------------------------------------------------------------------------------
 #
-svars <- c(
+svars3 <- c(
   'P3503S1_1',  # SWB life
   'P3503S2_2',  # SWB health
   'P3503S3_3',  # SWB economic outlook
@@ -667,6 +682,8 @@ svars <- c(
   )
 
 lapply(svars, function(x) {table(dt_pl[dt_pl$a18 == 1,x])})
+
+svars <- c(svars1,svars2,svars3)
 
 dt <- dt_pl[dt_pl$a18 == 1, ]
 
@@ -736,7 +753,26 @@ stats_dt1 <- stats_dt1[is.na(stats_dt1$statistic) == FALSE,]
 stats_dt2 <- stats_dt2[is.na(stats_dt2$cat) == FALSE,]
 stats_dt2 <- merge(stats_dt1,stats_dt2, all.y = TRUE)
 
-openxlsx::write.xlsx(stats_dt2, 'stats_dt4.xlsx')
+#openxlsx::write.xlsx(stats_dt2, 'stats_dt4.xlsx')
+#
+fun_color_range <- colorRampPalette(c("#00AFBB", "#E7B800"))
+my_colors <- fun_color_range(70)
+
+ggplot(stats_dt2[stats_dt2$cat == 1,],
+           aes(y = variable , x = mean, fill = n)) + 
+  geom_tile() +
+  scale_colour_gradientn(colors = my_colors) +
+  theme_ipsum() +
+  ylab('Problem group') + 
+  xlab('Perceived problem impact') +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5 , size = 8)) +
+  theme(axis.text.y = element_text(size = 8)) +
+  theme(legend.text = element_text(size = 8)) +
+  theme(legend.text = element_text(size = 8)) +
+  theme(legend.title = element_text(size = 8),
+        legend.text  = element_text(size = 8)) +
+  ggtitle('Perceived impact by problem group') +
+  theme(plot.title = element_text(size = 10)) 
 
 # 01. CLASS, AGE MARGIN, SEX, DECLARATION ----------------------------------------------------------
 # Sandkey
@@ -806,8 +842,6 @@ dt$strata <- factor(dt$strata)
 
 mean(dt$pj[dt$P220 == 'Mujer'& dt$a18 == 1 & is.na(dt$P1988S1) == FALSE ])
 mean(dt$pj[dt$P220 == 'Hombre'& dt$a18 == 1 & is.na(dt$P1988S1) == FALSE ])
-
-
 
 # Class
 wilcox.test(pj ~ Clase, data = dt[dt$a18 == 1,], exact = FALSE)
