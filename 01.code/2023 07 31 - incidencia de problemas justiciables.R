@@ -650,8 +650,8 @@ svars1 <- c(
 ## victimization  ----------------------------------------------------------------------------------
 #
 svars2 <- c(
-  'P564',             # prospects on being a victim in the future
-  'abuse'             # street abuse and sexual abuse experiences
+  'P564'             # prospects on being a victim in the future
+  # 'abuse'             # street abuse and sexual abuse experiences
   #'vic_2021',         # victimization 2021
   #'vic_2022'         # victimization 2022
   #'physicalviolence', # physical violence
@@ -681,9 +681,9 @@ svars3 <- c(
   'safe_city'   # security perception (municipality/city)
   )
 
+svars <- c(svars1,svars2,svars3)
 lapply(svars, function(x) {table(dt_pl[dt_pl$a18 == 1,x])})
 
-svars <- c(svars1,svars2,svars3)
 
 dt <- dt_pl[dt_pl$a18 == 1, ]
 
@@ -757,24 +757,75 @@ stats_dt2 <- merge(stats_dt1,stats_dt2, all.y = TRUE)
 #
 fun_color_range <- colorRampPalette(c("#00AFBB", "#E7B800"))
 my_colors <- fun_color_range(70)
+sc <- scale_color_gradientn(colors = my_colors) 
+labsw <- c(
+"swbi" = "SWB",
+'strata' = "Estrato",
+'single' = "Soltero/a",
+'safe_WaN' = "Seguro/a de noche",
+'safe_local'="Seguro/a local",
+'safe_city'="Seguro/a municipio",
+'recon'="Reconocimiento étnico",
+'pea'="PEA",
+'P564'="Prospecto de victimización",
+'P3503S6_6'="Satisfacción relaciones",
+'P3503S5_5'="Satisfacción emociones",
+'P3503S4_4'="Satisfacción trabajo",
+'P3503S3_3'="Satisfacción economía",
+'P3503S2_2'="Satisfacción salud",
+'P3503S1_1'="Satisfacción vida",
+'P3317S3'="Aporte Centros de conciliación",
+'P3317S2'="Aporte Ins Policía",
+'P3317S1'="Aporte ICBF",
+'P3303'="Uso de internet",
+'P220'="Sexo",
+'P1988'="Electricidad en el hogar",
+'P1182S3'="Aporte Alcalde",
+'P1182S2'="Aporte Ejercito",
+'P1182S1'="Aporte Policía",
+'P1181S2'="Aporte Jueces",
+'P1181S1'="Aporte Fiscalía",
+'ownedh'="Vivienda propia",
+'old'="Mayor de 60",
+'hetero'="Heterosexual",
+'edug'="Bachillerato o más",
+'dis'="Condición de discapacidad",
+'Clase'="Hogar Urbano",
+'cis'="Cisgenero",
+'born_col'="Nacido/a Colombia"
+)
+
+
+
 
 ggplot(stats_dt2[stats_dt2$cat == 1,],
            aes(y = variable , x = mean, fill = n)) + 
   geom_tile() +
-  scale_colour_gradientn(colors = my_colors) +
+  scale_fill_gradientn(colors = my_colors)+
   theme_ipsum() +
-  ylab('Problem group') + 
-  xlab('Perceived problem impact') +
-  theme(axis.text.x = element_text(angle = 45, vjust = 0.5, hjust = 0.5 , size = 8)) +
+  ylab('Características') + 
+  xlab('Tasa media de declaración') +
+  theme(axis.text.x = element_text( vjust = 0.5, hjust = 0.5 , size = 8)) +
   theme(axis.text.y = element_text(size = 8)) +
   theme(legend.text = element_text(size = 8)) +
   theme(legend.text = element_text(size = 8)) +
   theme(legend.title = element_text(size = 8),
         legend.text  = element_text(size = 8)) +
-  ggtitle('Perceived impact by problem group') +
-  theme(plot.title = element_text(size = 10)) 
+  labs(fill = 'Observaciones') +
+  scale_y_discrete(labels = labsw) +
+  scale_x_continuous(limits = c(0.08, 0.18), breaks = seq(0, 0.19, 0.025)) +
+  theme(legend.position = "top",  legend.spacing.x = unit(0, 'cm'))
+  guides(fill = guide_legend(label.position = "top")) +
+  ggtitle('') +
+  theme(plot.title = element_text(size = 20)) + sc
 
-# 01. CLASS, AGE MARGIN, SEX, DECLARATION ----------------------------------------------------------
+# 01. SEX, AGE and DECLARATION ----------------------------------------------------------
+
+dt <- dt_pl[dt_pl$a18 == 1, ]
+dt |> group_by(Clase) |> summarise(pj = mean(jp) )
+
+
+
 # Sandkey
 
 library(ggsankey)
