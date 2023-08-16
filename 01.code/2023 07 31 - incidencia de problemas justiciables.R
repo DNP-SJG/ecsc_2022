@@ -123,6 +123,28 @@ dt_pl$a18 <- 0
 dt_pl$a18[dt_pl$P5785 > 17] <- 1
 table(dt_pl$a18, dt_pl$jp)
 
+# Under-age in household - - - - 
+# 
+dtage <- dt_pl[dt_pl$P5785 < 18, ]
+table(dtage$P5785)
+
+dtage <- dtage %>% group_by(keyh) %>% tally()
+dtage$n1 <- 0
+dtage$n1[dtage$n > 0] <- 1
+table(dtage$n,dtage$n1)
+names(dtage) <- c("keyh","n_uage","uage")
+table(is.na(dtage$uage))
+
+dt_pl <- merge(dt_pl,dtage, by = 'keyh', all.x = TRUE)
+table(is.na(dt_pl$n_uage[!duplicated(dt_pl$keyh)]))
+table(is.na(dt_pl$n_uage))
+
+dt_pl$n_uage[is.na(dt_pl$n_uage) == TRUE] <- 0
+dt_pl$uage[is.na(dt_pl$uage) == TRUE] <- 0
+
+table((dt_pl$uage[!duplicated(dt_pl$keyh)]))
+table((dt_pl$uage))
+
 dt_pl <- dt_pl[dt_pl$P5785 > 14,]
 
 # 00.02 DEFINES RELEVANT GROUPING VARIABLES --------------------------------------------------------
@@ -795,9 +817,6 @@ labsw <- c(
 'born_col'="Nacido/a Colombia"
 )
 
-
-
-
 ggplot(stats_dt2[stats_dt2$cat == 1,],
            aes(y = variable , x = mean, fill = n)) + 
   geom_tile() +
@@ -814,15 +833,71 @@ ggplot(stats_dt2[stats_dt2$cat == 1,],
   labs(fill = 'Observaciones') +
   scale_y_discrete(labels = labsw) +
   scale_x_continuous(limits = c(0.08, 0.18), breaks = seq(0, 0.19, 0.025)) +
-  theme(legend.position = "top",  legend.spacing.x = unit(0, 'cm'))
+  theme(legend.position = "top",  legend.spacing.x = unit(0, 'cm')) +
   guides(fill = guide_legend(label.position = "top")) +
   ggtitle('') +
   theme(plot.title = element_text(size = 20)) + sc
 
+  rm(labsw, svars,svars1,svars2,svars3,my_colors,x, i,var,swbi,swvars,
+     abuse,abusei, conttibutionvars,dis,disi,sc,stats_dt1,stats_dt2,stats1,stats2,
+     fun_color_range,frec)
+  
 # 01. SEX, AGE and DECLARATION ----------------------------------------------------------
 
 dt <- dt_pl[dt_pl$a18 == 1, ]
-dt |> group_by(Clase) |> summarise(pj = mean(jp) )
+dt1 <- dt |> group_by(P220,edug,P5785,hetero,jp) |> summarise(pj = mean(jp), fex = sum(FEX_C) )
+#openxlsx::write.xlsx(dt1, '01.3. declaration by sex age and education.xlsx')
+rm(dt1)
+
+table(dt_pl$P5785)
+table(dt$P5785)
+
+
+dt <- dt_pl[dt_pl$a18 == 1, ]
+dt1 <- dt |> group_by(P220,edug,P5785,hetero,jp,pea) |> summarise( fex = sum(FEX_C) )
+
+dt <- dt_pl[dt_pl$a18 == 1, ]
+dt1 <- dt |> group_by(P220,edug,P5785,jp,uage,n_uage,single) |> summarise( fex = sum(FEX_C) )
+
+dt <- dt_pl[dt_pl$a18 == 1, ]
+dt1 <- dt |> group_by(keyp,jp,n_uage) |> summarise( fex = sum(FEX_C) )
+dt_pj_rt_pl$pj <- 1
+dt2 <- dt_pj_rt_pl |> group_by(keyp) |> summarise( pj = sum(pj) )
+
+dt1 <- merge(dt1,dt2,all.x = T)
+
+dt <- dt_pl[dt_pl$a18 == 1, ]
+dt1 <- dt |> group_by(jp,edug) |> summarise( fex = sum(FEX_C) )
+
+
+dt <- dt_pl[dt_pl$a18 == 1, ]
+dt1 <- dt |> group_by(jp,ownedh,strata,P3303,P1988,Clase) |> summarise( fex = sum(FEX_C) )
+
+dt1 <- dt |> group_by(jp,ownedh,strata,P3303,P1988,Clase,P6210,edug) |> summarise( fex = sum(FEX_C) )
+
+
+openxlsx::write.xlsx(dt1, '01.10. declaration by hh features and education.xlsx')
+
+
+table(dt_pl$P5785)
+table(dt$P5785)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
