@@ -876,30 +876,65 @@ dt1 <- dt |> group_by(jp,ownedh,strata,P3303,P1988,Clase) |> summarise( fex = su
 dt1 <- dt |> group_by(jp,ownedh,strata,P3303,P1988,Clase,P6210,edug) |> summarise( fex = sum(FEX_C) )
 
 
-openxlsx::write.xlsx(dt1, '01.10. declaration by hh features and education.xlsx')
+#openxlsx::write.xlsx(dt1, '01.10. declaration by hh features and education.xlsx')
 
+# Diasability function
+# 
+dt <- dt_pl[dt_pl$a18 == 1, ]
 
-table(dt_pl$P5785)
-table(dt$P5785)
+df <- dt |> make_long(Clase,ownedh,edug,dis,jp)
+#df <- df[is.na(df$next_node) == FALSE,]
 
+fun_color_range <- colorRampPalette(c("#2FB0B2", "#E7B800"))
+my_colors <- fun_color_range(6)
+sc <- scale_color_gradientn(colors = my_colors) 
 
+library(ggalluvial)
 
+df2 <- dt |> group_by(jp,dis,edug,ownedh,Clase) |> summarise(FEX_C = sum(FEX_C))
+df2$FEX_C <- df2$FEX_C/1000
 
+df2$Clase[df2$Clase == 0] <- 'Rural'
+df2$Clase[df2$Clase == 1] <-  'Urbano'
 
+df2$jp[df2$jp == 0] <- 'No declara'
+df2$jp[df2$jp == 1] <-  'Declara'
 
+df2$dis[df2$dis == 0] <- 'No'
+df2$dis[df2$dis == 1] <-  'Si'
 
+df2$edug <- as.numeric(df2$edug)
 
+df2$edug[df2$edug == 1] <- '< Superior o universitaria'
+df2$edug[df2$edug == 2] <-  'Superior o universitaria'
 
+fun_color_range(6)
 
-
-
-
-
-
-
-
-
-
+ggplot(df2,
+       aes(y = FEX_C,
+           axis1 = as.factor(Clase),
+           axis2 = as.factor (dis),
+           axis3 = as.factor (edug),
+           axis4 = as.factor (jp)
+           
+       )) +
+  geom_alluvium(aes(fill = jp), width = 1/2) +
+  geom_stratum(width = 1/9,
+               color = "grey",
+               alpha = .7) +
+  geom_text(stat = "stratum", 
+            color = "grey30",
+            aes(label = after_stat(stratum)),
+            angle = 90) +
+  scale_x_discrete(limits = c("Clase", 
+                              'Condición de discapacidad',
+                              "Nivel educativo", 
+                              "Estado de declaración"),
+                   expand = c(.05, .05)) +
+  scale_fill_manual(values =  fun_color_range(2)) +
+  labs(y = "Personas") +
+  theme_minimal() +
+  theme(legend.position = "none") 
 
 # Sandkey
 
