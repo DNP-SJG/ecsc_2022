@@ -876,30 +876,70 @@ dt1 <- dt |> group_by(jp,ownedh,strata,P3303,P1988,Clase) |> summarise( fex = su
 dt1 <- dt |> group_by(jp,ownedh,strata,P3303,P1988,Clase,P6210,edug) |> summarise( fex = sum(FEX_C) )
 
 
-openxlsx::write.xlsx(dt1, '01.10. declaration by hh features and education.xlsx')
+#openxlsx::write.xlsx(dt1, '01.10. declaration by hh features and education.xlsx')
+
+# Diasability function
+# 
+dt <- dt_pl[dt_pl$a18 == 1, ]
+
+fun_color_range <- colorRampPalette(c("#2FB0B2", "#E7B800"))
+my_colors <- fun_color_range(6)
+sc <- scale_color_gradientn(colors = my_colors) 
+
+library(ggalluvial)
+
+dt1 <- dt |> group_by(jp,dis,edug,ownedh,Clase,P220) |> summarise(FEX_C = sum(FEX_C))
+openxlsx::write.xlsx(dt1, '01.11. declaration by hh features education and dis.xlsx')
+
+df2$FEX_C <- df2$FEX_C/1000
+
+dt1$Clase[dt1$Clase == 0] <- 'Rural'
+dt1$Clase[dt1$Clase == 1] <-  'Urbano'
+
+dt1$jp[dt1$jp == 0] <- 'No declara'
+dt1$jp[dt1$jp == 1] <-  'Declara'
+
+dt1$dis[dt1$dis == 0] <- 'No'
+dt1$dis[dt1$dis == 1] <-  'Si'
+
+dt1$edug <- as.numeric(dt1$edug)
+
+dt1$edug[dt1$edug == 1] <- '< Superior o universitaria'
+dt1$edug[dt1$edug == 2] <-  'Superior o universitaria'
+
+fun_color_range(6)
+
+ggplot(dt1,
+       aes(y = FEX_C,
+           axis1 = as.factor(Clase),
+           axis2 = as.factor (dis),
+           axis3 = as.factor (edug),
+           axis4 = as.factor (jp)
+           
+       )) +
+  geom_alluvium(aes(fill = jp), width = 1/2) +
+  geom_stratum(width = 1/9,
+               color = "grey",
+               alpha = .7) +
+  geom_text(stat = "stratum", 
+            color = "grey30",
+            aes(label = after_stat(stratum)),
+            angle = 90) +
+  scale_x_discrete(limits = c("Clase", 
+                              'Condición de discapacidad',
+                              "Nivel educativo", 
+                              "Estado de declaración"),
+                   expand = c(.05, .05)) +
+  scale_fill_manual(values =  fun_color_range(2)) +
+  labs(y = "Personas") +
+  theme_minimal() +
+  theme(legend.position = "none") 
 
 
-table(dt_pl$P5785)
-table(dt$P5785)
+# Exports file to run regressions in stata
+#
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+haven::write_dta(dt_pl,'dt_pl.dta')
 
 # Sandkey
 
@@ -988,6 +1028,9 @@ wilcox.test(jp ~ edug, data = dt_pl[dt_pl$a18 == 1,], exact = FALSE)
 dt_pl[dt_pl$a18 == 1,] |> group_by(edug) |> summarise(pj = mean(jp) )
 
 dt_pl[dt_pl$a18 == 1,] |> group_by(vic) |> summarise(pj = mean(jp) )
+
+
+
 
 library("ggpubr")
 ggboxplot(dt[dt$a18 == 1,], x = "edug", y = "pj", 
