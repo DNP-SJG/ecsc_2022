@@ -936,7 +936,7 @@ ggplot(dt1,
   theme(legend.position = "none") 
 
 
-# Exports file to run regressions in stata
+# Exports file to run regressions in stata top run regressions
 #
 
 haven::write_dta(dt_pl,'dt_pl.dta')
@@ -949,7 +949,7 @@ library(ggalluvial)
 
 dt <- dt_pl[dt_pl$a18 == 1, ] |> group_by(crimereporting) |> summarise(jp = mean(jp) )
 
-
+ 
 
 df <- dt_pl[dt_pl$a18 == 1,] |> make_long(Clase,P220,jp)
 dagg <- df|>dplyr::group_by(node)|>tally()
