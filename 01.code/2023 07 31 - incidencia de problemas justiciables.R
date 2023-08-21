@@ -940,7 +940,35 @@ ggplot(dt1,
 #
 
 haven::write_dta(dt_pl,'dt_pl.dta')
- 
+
+# exports declaration table conditional on type of problem
+table(dt_pj_rt_pl$cat_en)
+dt_pj_rt_pl$crime <- 2
+dt_pj_rt_pl$crime[dt_pj_rt_pl$cat_en == "Armed conflict"] <- 1
+dt_pj_rt_pl$crime[dt_pj_rt_pl$cat_en == "Crime"] <- 1
+
+table(dt_pj_rt_pl$cat_en,dt_pj_rt_pl$crime)
+table(is.na(dt_pj_rt_pl$crime))
+
+table(dt_pj_rt_pl$crime,dt_pj_rt_pl$nj_count1)
+
+dt2 <- dt_pj_rt_pl |> group_by(keyp) |> summarise(mean = mean(crime))
+dt2$pjt <- round(dt2$mean,0)
+dt2$pjt[dt2$mean < 2 & dt2$mean > 1] <- 3
+
+dt_pl <- merge(dt_pl,dt2[c('keyp','pjt')], all.x = TRUE, by = 'keyp')
+
+
+dt_pl$pjt[is.na(dt_pl$pjt == TRUE)] <- 0
+table(dt_pl$pjt,dt_pl$jp)
+
+
+haven::write_dta(dt_pl,'dt_pl1.dta')
+
+dt1 <- dt |> group_by(jp,dis,edug,ownedh,Clase,P220) |> summarise(FEX_C = sum(FEX_C))
+
+
+
 # Sandkey
 
 library(ggsankey)
