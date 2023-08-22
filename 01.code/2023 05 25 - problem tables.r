@@ -208,8 +208,11 @@ table(duplicated(dt_p$keyp))
   dt_pj <- dt_pj[,c('keyp','keypp','FEX_C','cat_lab','cat_labs','cat_en','cat_id',
                     'type_lab','type_labs','type_en','type_id','impact','year','month',
                     'p_type','impact_q','year_q','month_q','nj_count1')]
+  
+  sum(dt_pj$FEX_C)
+  dt_pj$id_dane <- 1
 
-### Creates variable to identify the problems under priority - - - - - - - - - - - - - - - - - - - -
+  ### Creates variable to identify the problems under priority - - - - - - - - - - - - - - - - - - - -
   
   # P3013 priority one
   # P3014 priority two
@@ -237,6 +240,7 @@ table(duplicated(dt_p$keyp))
   dt_pj$nj_prio.x <- NULL
   dt_pj$nj_prio.y <- NULL
   
+  dt_pj$nj_prio
   # At this stage the ** nj_prio ** variable only holds records from declarants with three or more
   # problems. By construction, all problems declared by individualas with as much as 2 problems
   # are considered to hold priority status. Thus, it is needed to either merge the problem ID from 
@@ -320,6 +324,8 @@ table(duplicated(dt_p$keyp))
   dt_route_p <- rbind(dt_route1,dt_route2);rm(dt_route1,dt_route2)
   table(is.na(dt_route_p$P1672)); table((dt_route_p$P1672))
   
+  table(dt_route_p$keypp %in% dt_pj$keypp)
+  
   #### 02.1.1.2. All visited institutions list -----------------------------------------------------
   
   var_i11 <- names(pdcd_largo_p)[grep('P1673S', names(pdcd_largo_p))[1:41]]  #institutions, all visited
@@ -370,6 +376,7 @@ table(duplicated(dt_p$keyp))
   rm(var_i11,var_i12,dt_inst_routPLC1, dt_inst_routPLC2)
   table(duplicated(dt_inst_routPLC$keypp))
   
+  sum()
   ### 02.1.2. No priority long cycle ---------------------------------------------------------------
   
   sum(pdcd_largo_sinp$FEX_C)
@@ -415,9 +422,10 @@ table(duplicated(dt_p$keyp))
   
   pdcd_largo_sinp <- arrange(pdcd_largo_sinp, keypp)
   
+  table(pdcd_largo_sinp$keyp %in%dt_pj$keyp )
   
-  ## The wide strcutre of the priority long cicle does not allow for a single indiviudla to report
-  ## more thna one problem with the same keyp-type_id combination. To solve this, the dduplicated 
+  ## The wide structure of the priority long cycle does not allow for a single individual to report
+  ## more than one problem with the same keyp-type_id combination. To solve this, the duplicated 
   ## records are going to be drop for the general routes consolidation, yet they will be appended
   ## to the final table once it is finished, in the no ** pdcd_largo_sinp ** there are 58 such 
   ## records..
@@ -500,38 +508,38 @@ table(duplicated(dt_p$keyp))
 
   #### 02.1.2.2. All visited institutions list -----------------------------------------------------
   
-  var_i11 <- names(pdcd_largo_sinp)[grep('P1673S', names(pdcd_largo_sinp))] 
-  
-  # institutions, alongside types, are the only wide strcuture in the table. Thus, it is needed
-  # to set the addecuated long format for thos problems properly set by priority order 2 
-  # (i.e. declaraction >= 3). There is a total of 1,249 of such records (linking only to problems
-  # faced using the institutional rout) under priority order 2.
-  #
-  # Institutions visited (** institution_allq ** ) for priority one
+  # var_i11 <- names(pdcd_largo_sinp)[grep('P1673S', names(pdcd_largo_sinp))] 
   # 
-  dt_inst_routNPLC <- tidyr::gather(pdcd_largo_sinp[is.na(pdcd_largo_sinp$P3154) == FALSE,
-                                                 c('keyp','keypp','P3154','P1672',var_i11)], 
-                                    institution_allq, 
-                                    nj_count1, 
-                                    var_i11, 
-                                    factor_key = TRUE)
-  
-  dt_inst_routNPLC <-   dt_inst_routNPLC[is.na(dt_inst_routNPLC$nj_count1) == FALSE,]
-  
-  table(duplicated(dt_inst_routNPLC$keypp), dt_inst_routNPLC$P1672)
-  table(duplicated(dt_inst_routNPLC$keypp))
-  table(dt_route_sinp$P1672)
-  
-  # Same process for the 58 unidentifyed duplicates
+  # # institutions, alongside types, are the only wide strcuture in the table. Thus, it is needed
+  # # to set the addecuated long format for thos problems properly set by priority order 2 
+  # # (i.e. declaraction >= 3). There is a total of 1,249 of such records (linking only to problems
+  # # faced using the institutional rout) under priority order 2.
+  # #
+  # # Institutions visited (** institution_allq ** ) for priority one
+  # # 
+  # dt_inst_routNPLC <- tidyr::gather(pdcd_largo_sinp[is.na(pdcd_largo_sinp$P3154) == FALSE,
+  #                                                c('keyp','keypp','P3154','P1672',var_i11)], 
+  #                                   institution_allq, 
+  #                                   nj_count1, 
+  #                                   var_i11, 
+  #                                   factor_key = TRUE)
   # 
-  dt_inst_routNPLCD <- tidyr::gather(duplicated_aux_sinp[is.na(duplicated_aux_sinp$P3154) == FALSE,
-                                                    c('keyp','keypp','P3154','P1672',var_i11)], 
-                                    institution_allq, 
-                                    nj_count1, 
-                                    var_i11, 
-                                    factor_key = TRUE)
-  
-  dt_inst_routNPLCD <-   dt_inst_routNPLCD[is.na(dt_inst_routNPLCD$nj_count1) == FALSE,]
+  # dt_inst_routNPLC <-   dt_inst_routNPLC[is.na(dt_inst_routNPLC$nj_count1) == FALSE,]
+  # 
+  # table(duplicated(dt_inst_routNPLC$keypp), dt_inst_routNPLC$P1672)
+  # table(duplicated(dt_inst_routNPLC$keypp))
+  # table(dt_route_sinp$P1672)
+  # 
+  # # Same process for the 58 unidentifyed duplicates
+  # # 
+  # dt_inst_routNPLCD <- tidyr::gather(duplicated_aux_sinp[is.na(duplicated_aux_sinp$P3154) == FALSE,
+  #                                                   c('keyp','keypp','P3154','P1672',var_i11)], 
+  #                                   institution_allq, 
+  #                                   nj_count1, 
+  #                                   var_i11, 
+  #                                   factor_key = TRUE)
+  # 
+  # dt_inst_routNPLCD <-   dt_inst_routNPLCD[is.na(dt_inst_routNPLCD$nj_count1) == FALSE,]
   
   table(duplicated(dt_inst_routNPLCD$keypp), dt_inst_routNPLCD$P1672)
   table(duplicated(duplicated_aux_sinp$keypp))
@@ -544,7 +552,7 @@ table(duplicated(dt_p$keyp))
   # Formats type_id 
   pdcd_corto$type_id <- pdcd_corto$SECUENCIA_ENCUESTA
   pdcd_corto$type_id <- sprintf("%04d", pdcd_corto$type_id)
-  
+  sum(pdcd_corto$FEX_C)
   table((pdcd_corto$type_id)%in%(dt_pj$type_id))
   
   # ___pdcd_corto_________|__pdcd_largo_p____
@@ -562,96 +570,119 @@ table(duplicated(dt_p$keyp))
   table(duplicated( pdcd_corto$keyp))
   
   pdcd_corto$keypp <- paste0(pdcd_corto$keyp, pdcd_corto$type_id)
+  
   table(pdcd_corto$keypp %in% dt_pj$keypp)
+  
   table(duplicated( pdcd_corto$keypp))
-
   out_aux_corto <- pdcd_corto[pdcd_corto$keypp %in%dt_pj$keypp ==  FALSE,]
+  
   table(dt_pj$keyp[dt_pj$keyp %in% out_aux_corto$keyp == TRUE])
   
-  pdcd_corto <- pdcd_corto[pdcd_corto$keypp %in%dt_pj$keypp ==  TRUE,]
+  pdcd_corto <- pdcd_corto[pdcd_corto$keypp %in% dt_pj$keypp ==  TRUE,]
   
+  #724382.8
   dt_route_cc <- pdcd_corto[c(       'keypp',
                                      'P1693',   # route
                                      'P1695',   # last institution
-                                     'P1696'    # Was the problem solved
+                                     'P1696'
+                                     , 'FEX_C'# Was the problem solved
   )]
   
+  #4252.281
   dt_route_cc_out_aux <- out_aux_corto[c(    'keypp',
                                              'P1693',   # route
                                              'P1695',   # last institution
-                                             'P1696'    # Was the problem solved
+                                             'P1696'    #  Was the problem solved
+                                             ,'FEX_C'
+                                             ,'type_id'# type
   )]
   
+  dt_ln1labs <- openxlsx::read.xlsx(sprintf(pat, "1_QSyAz-Cuoiq2TlVJuQsvQ55oz7A5FN6"))
+  names(dt_route_cc_out_aux) <- c('keypp','P1672','P1674','P1685','FEX_C','type_id')
+  dt_route_cc_out_aux <- merge(dt_route_cc_out_aux,dt_ln1labs, all.x = TRUE, by = 'type_id') 
+  rm(dt_ln1labs)
+ 
+  sum(dt_route_cc$FEX_C)
+  sum(dt_route_cc_out_aux$FEX_C)
+
+ dt_route_cc$FEX_C <- NULL
+ 
   names(dt_route_cc) <- c('keypp','P1672','P1674','P1685')
-  names(dt_route_cc_out_aux) <- c('keypp','P1672','P1674','P1685')
+
   table(dt_route_cc$P1672)
+  
+  dt_route_cc$cc <- 1
+  dt_route_cc_out_aux$cc <- 1
+  
   #### 02.1.3.2. All visited institutions list -----------------------------------------------------
   
-  var_i11 <- names(pdcd_corto)[grep('P1694S', names(pdcd_corto))] 
-  
-  dt_inst_routCC <- tidyr::gather(pdcd_corto[is.na(pdcd_corto$type_id) == FALSE,
-                                                    c('keyp','keypp','type_id','P1693',var_i11)], 
-                                    institution_allq, 
-                                    nj_count1, 
-                                    var_i11, 
-                                    factor_key = TRUE)
-  
-  dt_inst_routCC <-   dt_inst_routCC[is.na(dt_inst_routCC$nj_count1) == FALSE,]
-  
-  table(duplicated(dt_inst_routCC$keypp), dt_inst_routCC$P1693)
-  table(duplicated(dt_inst_routCC$keypp))
-  table(dt_route_cc$P1672)
-  # Same process for the 11 unidentifyed out records
+  # var_i11 <- names(pdcd_corto)[grep('P1694S', names(pdcd_corto))] 
   # 
-  dt_inst_routCCD <- tidyr::gather(out_aux_corto[is.na(out_aux_corto$type_id) == FALSE,
-                                                         c('keyp','keypp','type_id','P1693',var_i11)], 
-                                     institution_allq, 
-                                     nj_count1, 
-                                     var_i11, 
-                                     factor_key = TRUE)
-  
-  dt_inst_routCCD <-   dt_inst_routCCD[is.na(dt_inst_routCCD$nj_count1) == FALSE,]
-  
-  table(duplicated(dt_inst_routCCD$keypp), dt_inst_routCCD$P1693)
-  table(duplicated(dt_inst_routCCD$keypp))
-  table(dt_route_cc_out_aux$P1672)
+  # dt_inst_routCC <- tidyr::gather(pdcd_corto[is.na(pdcd_corto$type_id) == FALSE,
+  #                                                   c('keyp','keypp','type_id','P1693',var_i11)], 
+  #                                   institution_allq, 
+  #                                   nj_count1, 
+  #                                   var_i11, 
+  #                                   factor_key = TRUE)
+  # 
+  # dt_inst_routCC <-   dt_inst_routCC[is.na(dt_inst_routCC$nj_count1) == FALSE,]
+  # 
+  # table(duplicated(dt_inst_routCC$keypp), dt_inst_routCC$P1693)
+  # table(duplicated(dt_inst_routCC$keypp))
+  # table(dt_route_cc$P1672)
+  # # Same process for the 11 unidentifyed out records
+  # # 
+  # dt_inst_routCCD <- tidyr::gather(out_aux_corto[is.na(out_aux_corto$type_id) == FALSE,
+  #                                                        c('keyp','keypp','type_id','P1693',var_i11)], 
+  #                                    institution_allq, 
+  #                                    nj_count1, 
+  #                                    var_i11, 
+  #                                    factor_key = TRUE)
+  # 
+  # dt_inst_routCCD <-   dt_inst_routCCD[is.na(dt_inst_routCCD$nj_count1) == FALSE,]
+  # 
+  # table(duplicated(dt_inst_routCCD$keypp), dt_inst_routCCD$P1693)
+  # table(duplicated(dt_inst_routCCD$keypp))
+  # table(dt_route_cc_out_aux$P1672)
   
   ## 02.2. Consolidated all visited institutions list ----------------------------------------------
   
-  names(dt_inst_routPLC)
-  names(dt_inst_routNPLC)
-  names(dt_inst_routCC)
-  
-  names(dt_inst_routNPLCD)
-  names(dt_inst_routCCD)
-  
-  names(dt_inst_routPLC)  <- c("keyp","keypp","type_id","P1672","institution_allq","nj_count1")
-  names(dt_inst_routNPLC)   <- names(dt_inst_routPLC)
-  names(dt_inst_routCC)     <- names(dt_inst_routPLC)
-  names(dt_inst_routNPLCD)  <- names(dt_inst_routPLC)
-  names(dt_inst_routCCD)    <- names(dt_inst_routPLC)
-  
-  dt_allvisited_inst <- rbind(dt_inst_routPLC,dt_inst_routNPLC,dt_inst_routCC)
-  table(duplicated(dt_allvisited_inst$keyp))
-  table(duplicated(dt_allvisited_inst$keypp))
-  
-  dt_allvisited_instD <- rbind(dt_inst_routNPLCD,dt_inst_routCCD)
-  table(duplicated(dt_allvisited_instD$keyp))
-  table(duplicated(dt_allvisited_instD$keypp))
-  
-  # defines table for all visited institutions in the  cicles tables. This table
-  # observation unit is defined by individuals-problems-institutions, a singel declarant, looking to
-  # solve problem X, may have visited n institutions.
-  #
-  dt_instlabs <- openxlsx::read.xlsx(sprintf(pat, "1tB7MQUDs4TIgB7Wgoq18QlqiJ_xUaTjd"))
-
-  dt_allvisited_inst <- merge(dt_allvisited_inst, dt_instlabs, all.x = TRUE, by = 'institution_allq')
-  dt_allvisited_instD <- merge(dt_allvisited_instD, dt_instlabs, all.x = TRUE, by = 'institution_allq')
-  
-  table(is.na(dt_allvisited_inst$institution_en));table(is.na(dt_allvisited_instD$institution_en))
-  
-  openxlsx::write.xlsx(file = '2023 06 30 - all_inst.xlsx',rbind(dt_allvisited_inst,dt_allvisited_instD))
-  
+  # names(dt_inst_routPLC)
+  # names(dt_inst_routNPLC)
+  # names(dt_inst_routCC)
+  # 
+  # names(dt_inst_routNPLCD)
+  # names(dt_inst_routCCD)
+  # 
+  # names(dt_inst_routPLC)  <- c("keyp","keypp","type_id","P1672","institution_allq","nj_count1")
+  # names(dt_inst_routNPLC)   <- names(dt_inst_routPLC)
+  # names(dt_inst_routCC)     <- names(dt_inst_routPLC)
+  # names(dt_inst_routNPLCD)  <- names(dt_inst_routPLC)
+  # names(dt_inst_routCCD)    <- names(dt_inst_routPLC)
+  # 
+  # dt_allvisited_inst <- rbind(dt_inst_routPLC,dt_inst_routNPLC,dt_inst_routCC)
+  # 
+  # table(duplicated(dt_allvisited_inst$keyp))
+  # table(duplicated(dt_allvisited_inst$keypp))
+  # 
+  # dt_allvisited_instD <- rbind(dt_inst_routNPLCD,dt_inst_routCCD)
+  # 
+  # table(duplicated(dt_allvisited_instD$keyp))
+  # table(duplicated(dt_allvisited_instD$keypp))
+  # 
+  # # defines table for all visited institutions in the  cicles tables. This table
+  # # observation unit is defined by individuals-problems-institutions, a singel declarant, looking to
+  # # solve problem X, may have visited n institutions.
+  # #
+  # dt_instlabs <- openxlsx::read.xlsx(sprintf(pat, "1tB7MQUDs4TIgB7Wgoq18QlqiJ_xUaTjd"))
+  # 
+  # dt_allvisited_inst <- merge(dt_allvisited_inst, dt_instlabs, all.x = TRUE, by = 'institution_allq')
+  # dt_allvisited_instD <- merge(dt_allvisited_instD, dt_instlabs, all.x = TRUE, by = 'institution_allq')
+  # 
+  # table(is.na(dt_allvisited_inst$institution_en));table(is.na(dt_allvisited_instD$institution_en))
+  # 
+  # openxlsx::write.xlsx(file = '2023 06 30 - all_inst.xlsx',rbind(dt_allvisited_inst,dt_allvisited_instD))
+  # 
   ## 02.3. Consolidated routes table  --------------------------------------------------------------
   
   names(dt_route_p)
@@ -661,12 +692,19 @@ table(duplicated(dt_p$keyp))
   names(dt_route_sinp_duplicated_aux)
   names(dt_route_cc_out_aux)
   
-  
   dt_route_p$keyp <- NULL
   dt_route_p$P3013 <- NULL
   
+  dt_route_p$cc <- 0
+  dt_route_sinp$cc <- 0
+  dt_route_cc_out_aux$cc <- 1
+  dt_route_sinp_duplicated_aux$cc <- 0
+  
+  dt_route_p$full_prob <- 1
+  dt_route_sinp$full_prob <- 1
+  dt_route_cc$full_prob <- 1
+  
   dt_rt <-  plyr::rbind.fill(dt_route_p,dt_route_sinp,dt_route_cc)
-  dt_rtD <-  plyr::rbind.fill(dt_route_sinp_duplicated_aux,dt_route_cc_out_aux)
   
   # Four duplicated records on the dt_rt table. At face value, this should not be an issue. Yet
   # if the records are not present in the general declaration table (so the routes differientiate 
@@ -680,56 +718,82 @@ table(duplicated(dt_p$keyp))
   #                priority table or the short cycle.
   # "627214121411" Declarant reported 3 problems, yet is the only one that appears in either the 
   #                priority table or the short cycle.
-  # 
+  #
+  
   table(duplicated(dt_rt$keypp))
   table(duplicated(dt_rtD$keypp))
   
+  dt_rt_aux <- dt_rt[duplicated(dt_rt$keypp),]
+  
   table(dt_rt$keypp %in% dt_pj$keypp)
+
+  dt_rt <- dt_rt[!duplicated(dt_rt$keypp),]
+ 
+ names( dt_route_sinp_duplicated_aux)
+ names( dt_route_cc_out_aux)
+ names( dt_rt_aux)
+  
+ #partial table
+ #
+  
+ dt_route_sinp_duplicated_aux$full_prob <- 0
+ dt_route_sinp_duplicated_aux$full_prob <- 0
+ 
+ dt_rtD <-  plyr::rbind.fill(dt_route_sinp_duplicated_aux,dt_rt_aux)
+  
   table(dt_rtD$keypp %in% dt_pj$keypp)
   table(dt_rtD$keypp %in% dt_rt$keypp)
-  
-  dt_rt <- dt_rt[!duplicated(dt_rt$keypp),]
+  table(dt_rtD$cc)
 
-  # Creates idenitfyer to set full and imcompleted/misidentifyed records
-  
-  dt_rt$full_prob  <- 1
-  dt_rtD$full_prob <- 0
-  
-  # Merges complete route table with declaration table 
+  # Merges complete route table with declaration table -  6258279
   # 
+  
   dt_pj_rt <- merge(dt_pj,dt_rt, all.x = TRUE)
+  table(is.na(dt_pj_rt$cc))
+  dt_pj_rt$full_prob <- 1
+  dt_pj_rt |> group_by(cc,P1685) |> summarise(fex = sum(FEX_C))
+  dt_pj_rt |> group_by(P1685) |> summarise(fex = sum(FEX_C))
+  dt_pj_rt |> group_by(full_prob) |> summarise(fex = sum(FEX_C))
   
   # Merges partial route table with declaration table 
   # 
+  table(dt_rtD$keypp %in% dt_pj$keypp)
   dt_pj_rt1 <- merge(dt_pj,dt_rtD, all.y = TRUE)
-  dt_pj_rt1 <- dt_pj_rt1[is.na(dt_pj_rt1$keyp) == FALSE, ]
+  table(is.na(dt_pj_rt1$FEX_C))
+  dt_route_cc_out_aux$full_prob <- 0
+  dt_pj_rt1 <- plyr::rbind.fill(dt_pj_rt1,dt_route_cc_out_aux)
+  dt_pj_rt1$full_prob <- 0
   
+  dt_pj_rt1 |> group_by(cc) |> summarise(fex = sum(FEX_C))
+  dt_pj_rt1 |> group_by(cc,P1685) |> summarise(fex = sum(FEX_C))
+  dt_pj_rt1 |> group_by(full_prob,cc) |> summarise(fex = sum(FEX_C))
+  dt_pj_rt |> group_by(full_prob,cc) |> summarise(fex = sum(FEX_C))
+  
+  names(dt_pj_rt)
+  names(dt_pj_rt1)
   dt_pj_rt <- rbind(dt_pj_rt,dt_pj_rt1)
-  table(dt_pj_rt$P1672,dt_pj_rt$full_prob ); rm(dt_pj_rt1)
+  dt_pj_rt$caract <- 0
+  dt_pj_rt$caract[is.na(dt_pj_rt$P1685) ==  FALSE] <- 1
   
-  # Appends missing problems to the general declaration table
-  # 
-  table(names(dt_rtD) %in% names(dt_pj_rt))
-  table(dt_rtD$keypp %in% dt_pj_rt$keypp)
+  dt_pj_rt |> group_by(full_prob) |> summarise(fex = sum(FEX_C))
+  dt_pj_rt |> group_by(caract) |> summarise(fex = sum(FEX_C))
+  dt_pj_rt |> group_by(cc,caract) |> summarise(fex = sum(FEX_C))
+  dt_pj_rt |> group_by(cc,full_prob) |> summarise(fex = sum(FEX_C))
   
-  dt_pj_rt <- plyr::rbind.fill(dt_pj_rt,dt_rtD[dt_rtD$keypp %in% dt_pj_rt$keypp == FALSE ,])
-  
-  table(dt_pj_rt$full_prob ,is.na(dt_pj_rt$impact))
-  table(dt_pj_rt$full_prob )
+  sum(dt_pj_rt$FEX_C)
 
   ### There are 320 problems that where identified in the declaration stage with no records
   ### on the route section, that is about 2% of the total declaration (not counting ) the recods
   ### with route information an no data on impact. The 69 atypical records all come from the routes
-  ### tables, thus they all have completely chracterized problems. The main issue with them is 
+  ### tables, thus they all have completely characterized problems. The main issue with them is 
   ### the fact that they do not show up in the declaration table.
   ###
   
-  ## 02.4. Consolidated problem-routes-sociodemographic table --------------------------------------
+  ## 02.4. Consolidated problem-routes-socio demographic table --------------------------------------
   
   table(dt_pj_rt$keyp %in% dt_p$keyp)
   dt_pj_rt$keyp[dt_pj_rt$keyp %in% dt_p$keyp == FALSE] <- substr(dt_pj_rt$keypp[dt_pj_rt$keyp %in% dt_p$keyp == FALSE],1,8)
   dt_pj_rt_p <- merge(dt_pj_rt, dt_p, all.x = TRUE, by = "keyp")
-  
   
   table(dt_pj_rt_p$P220)  
   table(is.na(dt_pj_rt_p$P220),dt_pj_rt_p$DEPMUNI)
@@ -744,11 +808,14 @@ table(duplicated(dt_p$keyp))
   dt_pj_rtu <- dt_pj_rtu[!duplicated(dt_pj_rtu$keyp), c('keyp','impact','count')]
   
   table(dt_pj_rtu$keyp %in% dt_p$keyp)
-  
-  dt_p_pj <- merge( dt_p, dt_pj_rtu, all.x = TRUE, by = "keyp")
-  
-  
 
+  dt_p_pj <- merge( dt_p, dt_pj_rtu, all.x = TRUE, by = "keyp")
+  table(is.na(dt_p_pj$count))
+  dt_p_pj$pj <- dt_p_pj$count/dt_p_pj$count
+  
+  dt_p_pj |> group_by(pj) |> summarise(fex = sum(FEX_C))
+  
+  
   #openxlsx::write.xlsx(dt_pj_rt_p, 'dt_pj_rt_p.xlsx')
   
   # 03. DEFINES LEVEL 1 TRANFORMATIONAL INDICATOR --------------------------------------------------
@@ -835,10 +902,11 @@ table(duplicated(dt_p$keyp))
   sum(dt3_num$FEX_C.x[dt3_num$pj == 1]) / sum(dt3_num$FEX_C.x)
   
   getwd()
+  saveRDS(pdcd_corto, 'dt_ciclo_corto.rds')
   saveRDS(dt_allvisited_inst, 'dt_inst.rds')
   saveRDS(dt_pj_rt_p,'dt_pj_rt_p.rds')
   saveRDS(dt_p,'dt_p.rds')
   saveRDS(dt_p_pj ,'dt_p_pj.rds')
   
-  
+
   
