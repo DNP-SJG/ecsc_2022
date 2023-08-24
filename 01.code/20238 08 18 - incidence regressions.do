@@ -12,7 +12,7 @@ clear all
 
 cd "L:/01.ecsc2022/02.enj2022/00.enj_data/03.stata regs"
 
-use "dt_pl1.dta", replace
+use "dt_pl2.dta", replace
 
 svyset keyh [pweight = FEX_C], /*
 */ vce(linearized) /*
@@ -23,8 +23,8 @@ svyset keyh [pweight = FEX_C], /*
 // 1.0 Creates variables  ------------------------------------------------------
 // -----------------------------------------------------------------------------
 
-describe
-sum
+*describe
+*sum
 
 // -----------------------------------------------------------------------------
 * 1.11 General changes in coding 
@@ -91,17 +91,33 @@ gl Y  jp // problem declaration
 * ownedh household ownership
 * Clase household type
 
-encode Clase, gen(Clase1) // swaped labels in Clase
-replace Clase1 = 0 if Clase1 == 1
-replace Clase1 = 1 if Clase1 == 2
-drop Clase
+destring Clase, replace // Clase
+table Clase
+
 
 table edug // swaped labels in educational level
-label list edug
+label drop edug
+destring edug, replace 
 replace edug = 0 if edug == 1
-replace edug = 1 if edug == 2 
+replace edug = 1 if edug ==  2
+table  P6210 edug
 
-gl  v_demo  "P220 P5785 recon dis single uage edug pea P3303 swbi ownedh Clase1"
+gen int lowage = 11 * floor(P5785/11)
+gen int highage = lowage + 10
+gen agegroup = string(lowage) + "-" + string(highage)
+tab agegroup
+
+replace agegroup = "18-21" if  agegroup == "11-21" 
+replace agegroup = "88-109" if  agegroup == "77-87" 
+replace agegroup = "88-109" if agegroup == "88-98" 
+replace agegroup = "88-109" if agegroup == "99-109"
+
+encode agegroup, generate(age) label(agegroup)
+tab age
+
+reg $Y ib1.age
+
+gl  v_demo  "i.P220  ib1.age  i.recon i.dis i.single i.uage i.edug i.pea i.P3303 i.swbi i.ownedh i.Clase"
 
 // victimization ---------------------------------------------------------------
 
@@ -128,7 +144,7 @@ gl  v_vict  "P564 abuse vic_2022"
 * safe_WaN security perception when walking alone at night
 * safe_city security perception (municipality/city)
 
-gl  v_perc  "   P1181S1 P1181S2 P1182S1 P3317S3 safe_local safe_WaN safe_city"
+gl  v_perc  "  P1181S1 P1181S2 P1182S1 P3317S3 safe_local i.safe_WaN safe_city"
 
 // -----------------------------------------------------------------------------
 * 4.  descrptves on variable sets ----------------------------------------------
@@ -259,39 +275,98 @@ esttab/*
 
 restore
 
+* marginal effects and some probability profiles -------------------------------
 
+// simple regression from model 4
+reg $Y $v_demo $v_perc i.age#i.dis [pweight = FEX_C], vce(robust) 
+	est store reg_inc_5	
+	
+*logit $Y $v_demo $v_perc i.age#i.dis [pweight = FEX_C], vce(robust) 
+	* est store reg_inc_5
+	* listcoef
 
+// margins on disability 
+	
+margins i.age#i.dis
+marginsplot
 
+margins r.dis@age
+marginsplot, recast(line) recastci(rarea) 
+ 
+margins i.pea#i.dis , at(P5785 =(18(15)110))
+ marginsplot  , by(dis)  recast(line) recastci(rarea)
 
+// margins on subjective wellbeing
+ 
+ reg $Y $v_demo $v_perc i.edug#i.swbi [pweight = FEX_C], vce(robust) 
+	est store reg_inc_5
+	
+ margins i.edug#i.swbi 
+ marginsplot
+ 
+* multinomial ------------------------------------------------------------------
 
+mlogit pjt $v_demo $v_perc [pweight = FEX_C] , /* 
+*/ vce(robust)  /*
+*/ base(0)
 
-
-
-
-
-
-listcoef
-sum $v_demo
-predict dec_demo
-hist dec_demo
-
-reg $Y $v_perc $v_vict $v_demo  [ pweight = FEX_C] , /*
- */ vce(robust) 
-	est store reg151_2
+est store mlogitout1
 ereturn  list 
 
-listcoef
-sum $v_vict 
-predict dec_vict 
-hist dec_vict 
+asdoc  mlogit, rrr
+
+esttab mlogitout1 using mlogitout3r.csv,  replace b(3) se(3)  label scalars(ll chi2 N) nonumbers unst
 
 
-logit $Y $v_demo [pweight = FEX_C]
-listcoef
-prchange
-prtab swb dis, x(P5785= mean) rest(min)
- predict dec_demo1
- hist dec_demo1
+mlogit rutas  nj_impacto  i.p1687 i.civ_prob_s  i.p220 p5785 age_sq  i.uni_educ  rural  [pweight = fex_c], /* 
+*/ vce(robust)  /*
+*/ base(2)
+est store mlogitout2
+ereturn  list 
+
+mlogit rutas  nj_impacto  i.p1687 i.p3013_cat_labensn  i.p220 p5785 age_sq  i.uni_educ  i.p1685 rural  [pweight = fex_c] if jp_g1 > 0, /* 
+*/ vce(robust)  /*
+*/ base(2)
+est store mlogitout3
+
+mlogit rutas  nj_impacto  i.p1687 i.p3013_cat_labensn  i.p220  p5785 age_sq  i.uni_educ  rural   [pweight = fex_c], /* 
+*/ vce(robust)  /*
+*/ base(2)
+est store mlogitout4
+
+esttab mlogitout1 using mlogitout1r.csv,  replace b(3) se(3)  label scalars(ll chi2 N) nonumbers unst
+esttab mlogitout2 using mlogitout2r.csv,  replace b(3) se(3)  label scalars(ll chi2 N) nonumbers unst
+esttab mlogitout3 using mlogitout3r.csv,  replace b(3) se(3)  label scalars(ll chi2 N) nonumbers unst
+esttab mlogitout4 using mlogitout4r.csv,  replace b(3) se(3)  label scalars(ll chi2 N) nonumbers unst
+
+mlogit, rrr // relative risk ratios
+margins, dydx(*)
+
+margins, dydx(*) atmeans post predict(pr outcome(1))
+margins, dydx(*) atmeans post predict(pr outcome(3))
+margins, dydx(*) atmeans post predict(pr outcome(4))
+
+margins p3013_cat_labensn, dydx()
+margins civ_prob_s, predict()
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
  
 
  
