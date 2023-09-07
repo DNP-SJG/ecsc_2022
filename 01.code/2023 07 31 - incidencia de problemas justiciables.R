@@ -56,6 +56,10 @@ names(dt_list) <- c('dt_p','dt_pj_rt_p','dt_allvisited_inst','dt_pj_rt_pl','dt_p
 dt_pl <- as.data.frame(dt_list[['dt_pl']])
 dt_pj_rt_pl <- dt_list[['dt_pj_rt_pl']]
 
+dt_pj_rt_pl|> group_by(cc) |> summarise(fex = sum(FEX_Cx))
+dt_pj_rt_pl|> group_by(caract) |> summarise(fex = sum(FEX_Cx))
+dt_pj_rt_pl|> group_by(full_prob) |> summarise(fex = sum(FEX_Cx))
+
 # loads each crime sub chapter to build the incident reporting variable
 #
 pat <- "https://docs.google.com/uc?id=%s&export=download"
@@ -647,6 +651,22 @@ for(i in 1:length(conttibutionvars)){
 
 }
 
+# Institutions - - - - - - 
+
+inst <- openxlsx::read.xlsx('L:/01.ecsc2022/02.enj2022/2023 06 30 - all_inst.xlsx')
+inst <- inst[!duplicated(inst$keypp),]
+table(inst$keypp %in% dt_pj_rt_pl$keypp)
+
+dt_pj_rt_pl <- merge(dt_pj_rt_pl,inst[c('institution','keypp')], all.x = TRUE, by = 'keypp')
+dt_pj_rt_pl$P1674_1 <- as.character(dt_pj_rt_pl$P1674)
+dt_pj_rt_pl$P1674_1[is.na(dt_pj_rt_pl$P1674_1 ) == TRUE] <- dt_pj_rt_pl$institution[is.na(dt_pj_rt_pl$P1674_1 ) == TRUE]
+
+dt <- dt_pj_rt_pl[ dt_pj_rt_pl$cc == 0 ,]
+c11 <- dt|> group_by(P1674_1) |> summarise(fex = sum(FEX_Cx))
+
+c11$fex <- round(c11$fex/1000,1)
+
+
 # Mean differences --------------------------------------------------------------------------------
 
 ## Demographics ------------------------------------------------------------------------------------
@@ -672,12 +692,12 @@ svars1 <- c(
 ## victimization  ----------------------------------------------------------------------------------
 #
 svars2 <- c(
-  'P564'             # prospects on being a victim in the future
-  # 'abuse'             # street abuse and sexual abuse experiences
-  #'vic_2021',         # victimization 2021
-  #'vic_2022'         # victimization 2022
-  #'physicalviolence', # physical violence
-  #'crimereporting'    # crime reporting 
+  'P564',             # prospects on being a victim in the future
+  'abuse',             # street abuse and sexual abuse experiences
+  'vic_2021',         # victimization 2021
+  'vic_2022',         # victimization 2022
+  'physicalviolence', # physical violence
+  'crimereporting'    # crime reporting 
 )
 
 ## perception --------------------------------------------------------------------------------------
@@ -841,8 +861,18 @@ ggplot(stats_dt2[stats_dt2$cat == 1,],
   rm(labsw, svars,svars1,svars2,svars3,my_colors,x, i,var,swbi,swvars,
      abuse,abusei, conttibutionvars,dis,disi,sc,stats_dt1,stats_dt2,stats1,stats2,
      fun_color_range,frec)
+
+# Exports general declaration and routes table with new socio-demogrpahic vars ---------------------
+
+vars <- names(dt_pl)[names(dt_pl) %in% names (dt_pj_rt_pl) == FALSE] 
+  table(dt_pj_rt_pl$keyp %in% dt_pl$keyp)
+  dt_pj_rt_pl1 <- merge(dt_pj_rt_pl,dt_pl[c('keyp',vars)], all.x = TRUE, by = 'keyp' )
+
+  table(dt_pj_rt_pl1$pea, dt_pj_rt_pl1$P1365)
   
-# 01. SEX, AGE and DECLARATION ----------------------------------------------------------
+  saveRDS(dt_pj_rt_pl1,'dt_pj_rt_plv.rds')
+  
+# 01. SEX, AGE and DECLARATION ---------------------------------------------------------------------
 
 dt <- dt_pl[dt_pl$a18 == 1, ]
 dt1 <- dt |> group_by(P220,edug,P5785,hetero,jp) |> summarise(pj = mean(jp), fex = sum(FEX_C) )
@@ -883,15 +913,15 @@ dt1 <- dt |> group_by(jp,ownedh,strata,P3303,P1988,Clase,P6210,edug) |> summaris
 dt <- dt_pl[dt_pl$a18 == 1, ]
 
 fun_color_range <- colorRampPalette(c("#2FB0B2", "#E7B800"))
-my_colors <- fun_color_range(6)
+my_colors <- fun_color_range(11)
 sc <- scale_color_gradientn(colors = my_colors) 
 
 library(ggalluvial)
 
 dt1 <- dt |> group_by(jp,dis,edug,ownedh,Clase,P220) |> summarise(FEX_C = sum(FEX_C))
-openxlsx::write.xlsx(dt1, '01.11. declaration by hh features education and dis.xlsx')
+#openxlsx::write.xlsx(dt1, '01.11. declaration by hh features education and dis.xlsx')
 
-df2$FEX_C <- df2$FEX_C/1000
+dt1$FEX_C <- dt1$FEX_C/1000
 
 dt1$Clase[dt1$Clase == 0] <- 'Rural'
 dt1$Clase[dt1$Clase == 1] <-  'Urbano'
@@ -939,7 +969,7 @@ ggplot(dt1,
 # Exports file to run regressions in stata top run regressions
 #
 
-haven::write_dta(dt_pl,'dt_pl.dta')
+
 
 # exports declaration table conditional on type of problem
 table(dt_pj_rt_pl$cat_en)
@@ -962,12 +992,11 @@ dt_pl <- merge(dt_pl,dt2[c('keyp','pjt')], all.x = TRUE, by = 'keyp')
 dt_pl$pjt[is.na(dt_pl$pjt == TRUE)] <- 0
 table(dt_pl$pjt,dt_pl$jp)
 
-
 haven::write_dta(dt_pl,'dt_pl1.dta')
 
+# ---
+
 dt1 <- dt |> group_by(jp,dis,edug,ownedh,Clase,P220) |> summarise(FEX_C = sum(FEX_C))
-
-
 
 # Sandkey
 
@@ -1009,7 +1038,7 @@ pl <- pl + labs(fill = 'Nodes')
 pl
 
 getwd()
-openxlsx::write.xlsx(dt, '01.1. general declaration by sex class and age margin.xlsx' )
+#openxlsx::write.xlsx(dt, '01.1. general declaration by sex class and age margin.xlsx' )
 rm(df,dagg,pl,dt)
 
 # 02. CLASS, AGE MARGIN, SEX,EDUCATION, DECLARATION ------------------------------------------------
