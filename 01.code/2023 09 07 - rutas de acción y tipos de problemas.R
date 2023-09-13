@@ -27,6 +27,22 @@ library(tidyverse)
 library(ggtext)
 library(showtext)
 
+library(ggsankey)
+library(tidyverse)
+library(ggalluvial)
+
+
+
+
+my_theme <- theme_minimal(base_size = 20, base_family = 'Quicksand') +
+  theme(
+    legend.position = 'none',
+    plot.title.position = 'plot',
+    text = element_text(color = 'grey40'),
+    plot.title = element_markdown(size = 10, margin = margin(b = 5, unit = 'mm'))
+  )
+theme_set(my_theme)
+
 # 00.01 LOADS  AND MERGES CHAPTERS -----------------------------------------------------------------
 
 ## Loads tables ------------------------------------------------------------------------------------
@@ -65,9 +81,11 @@ dt_pj_rt_pl|> group_by(full_prob) |> summarise(fex = sum(FEX_Cx))
 
 table (dt_pj_rt_pl$full_prob, dt_pj_rt_pl$caract)
 
-dt  <-  dt_pj_rt_pl[dt_pj_rt_pl$full_prob == 1,]
+
 
 # Problem type identifiers -------------------------------------------------------------------------
+dt  <-  dt_pj_rt_pl[dt_pj_rt_pl$full_prob == 1,]
+dt  <-  dt_pj_rt_pl[dt_pj_rt_pl$caract == 1,]
 
 # Justiciable problem --- --- --- 
 dt$jp <- 1
@@ -95,10 +113,8 @@ r_P1679 <- c(
 table(dt$P1681)
 r_P1681 <- c(
 'Otro',
-'No  había otra opción, estaba en estado de necesidad (hambre de un menor, salud de una persona).',
 'Es la forma como se resuelven los problemas aquí.',
-'Tenía mucha rabia, se dejó llevar, el otro se lo merecía.',
-'Porque el problema no fue tan grave')
+'Tenía mucha rabia, se dejó llevar, el otro se lo merecía.')
 
 table(dt$P1682)
 r_P1682 <- c(
@@ -132,6 +148,327 @@ for(i in 1:length(vars)){
     }
 }
 
-c1 <- dt[dt$caract == 1,] |> group_by(jp,njg,nje,DEPMUNI) |> summarise(fex = sum(FEX_C))
-openxlsx::write.xlsx(c1,'02.01 tipos de problemas.xlsx')
-# 01.Sand keyplot on total problem, characterization, legal needs and other ------------------------
+c1 <- dt |> group_by(jp,njg,nje,DEPMUNI) |> summarise(fex = sum(FEX_C))
+
+dt[dt$caract == 1 & dt$njg == 1 & dt$cc == 0,] |> group_by(P1685) |> summarise(fex = sum(FEX_C))
+
+#openxlsx::write.xlsx(c1,'02.01 tipos de problemas.xlsx')
+
+# 01.Sand key plot on total problem, characterization, legal needs and other -----------------------
+
+dt <- dt_pl[dt_pl$a18 == 1, ] |> group_by(crimereporting) |> summarise(jp = mean(jp))
+
+df <- dt |> make_long(jp,nje,njg)
+dagg <- df|>dplyr::group_by(node) |> tally()
+
+df <- merge(df, dagg, by.x = 'node', by.y = 'node', all.x = TRUE)
+
+pl <- ggplot(df, aes(x = x
+                     , next_x = next_x
+                     , node = node
+                     , next_node = next_node
+                     , fill = factor(node)
+                     , label = paste0(node)))
+
+pl <- pl +geom_sankey(flow.alpha = 0.5,  color = "gray40", show.legend = TRUE)
+pl <- pl +geom_sankey_label(size = 3, color = "white", fill= "gray40", hjust = -0.2)
+
+pl <- pl +  theme_bw()
+pl <- pl + theme(legend.position = "none")
+pl <- pl +  theme(axis.title = element_blank()
+                  , axis.text.y = element_blank()
+                  , axis.ticks = element_blank()  
+                  , panel.grid = element_blank())
+
+pl <- pl + scale_fill_viridis_d(option = "inferno")
+pl <- pl + labs(title = "Sankey diagram - Justiciable problem declaration")
+pl <- pl + labs(caption = "ECSC 2022")
+pl <- pl + labs(fill = 'Nodes')
+
+pl
+
+rm(df,dagg,pl,dt)
+
+# 02. General route taking  ------------------------------------------------------------------------
+
+dt  <-  dt_pj_rt_pl[dt_pj_rt_pl$caract == 1,]
+c1 <- dt |> group_by(P1672, cat_labs, impact) |> summarise(fex = sum(FEX_C))
+
+#openxlsx::write.xlsx(c1,'02.02 rutas según impacto y categoría de problema.xlsx')
+
+
+# 03. Route taking on impact and problem type  -----------------------------------------------------
+
+dt  <-  dt_pj_rt_pl[dt_pj_rt_pl$caract == 1,]
+dt  <-  dt[dt$full_prob == 1,]
+
+dt$civil <- 'Civil'
+dt$civil[dt$cat_labs == 'Delitos'] <- 'Criminal'
+dt$civil[dt$cat_labs == 'Conflicto armado'] <- 'Criminal'
+
+quantile(dt$impact, c(.25, .50, .70, .90, .99))
+dt$impact_a <- 'Bajo'
+dt$impact_a[dt$impact < 8] <- 'Alto'
+
+df <- dt |> group_by(civil, impact_a,P1672) |> summarise(fex = sum(FEX_C))
+#openxlsx::write.xlsx(df, '02.2 civil impact route.xlsx')
+
+
+df <- dt |> make_long(civil, impact_a,P1672,value = FEX_C)
+
+dagg <- df|>dplyr::group_by(node) |> tally()
+
+df <- merge(df, dagg, by.x = 'node', by.y = 'node', all.x = TRUE)
+
+pl <- ggplot(df, aes(x = x
+                     , next_x = next_x
+                     , node = node
+                     , next_node = next_node
+                     , fill = factor(node)
+                     , label = paste0(node)))
+
+pl <- pl +geom_sankey(flow.alpha = 0.5,  color = "gray40", show.legend = TRUE)
+pl <- pl +geom_sankey_label(size = 3, color = "white", fill= "gray40", hjust = -0.2)
+
+pl <- pl +  theme_bw()
+pl <- pl + theme(legend.position = "none")
+pl <- pl +  theme(axis.title = element_blank()
+                  , axis.text.y = element_blank()
+                  , axis.ticks = element_blank()  
+                  , panel.grid = element_blank())
+
+pl <- pl + scale_fill_viridis_d(option = "inferno")
+pl <- pl + labs(title = "Sankey diagram - Justiciable problem declaration")
+pl <- pl + labs(caption = "ECSC 2022")
+pl <- pl + labs(fill = 'Nodes')
+
+pl
+
+rm(df,dagg,pl,dt)
+
+
+# 04. Route taking on sex and age  -----------------------------------------------------
+
+dt  <-  dt_pj_rt_pl[dt_pj_rt_pl$caract == 1,]
+dt  <-  dt[dt$full_prob == 1,]
+
+dt$civil <- 'Civil'
+dt$civil[dt$cat_labs == 'Delitos'] <- 'Criminal'
+dt$civil[dt$cat_labs == 'Conflicto armado'] <- 'Criminal'
+
+quantile(dt$impact, c(.25, .50, .70, .90, .99))
+dt$impact_a <- 'Bajo'
+dt$impact_a[dt$impact < 8] <- 'Alto'
+
+
+c1 <- dt |> group_by(P1672, cat_labs, civil,impact_a,impact,P220,P5785) |> summarise(fex = sum(FEX_Cy))
+openxlsx::write.xlsx(c1, '02.2 route taking and demographics.xlsx')
+
+
+# 05. Route taking on sex, education SWB  -----------------------------------------------------
+
+dt  <-  dt_pj_rt_pl[dt_pj_rt_pl$caract == 1,]
+dt  <-  dt[dt$full_prob == 1,]
+
+dt$civil <- 'Civil'
+dt$civil[dt$cat_labs == 'Delitos'] <- 'Criminal'
+dt$civil[dt$cat_labs == 'Conflicto armado'] <- 'Criminal'
+
+quantile(dt$impact, c(.25, .50, .70, .90, .99))
+dt$impact_a <- 'Bajo'
+dt$impact_a[dt$impact < 8] <- 'Alto'
+
+
+c1 <- dt |> group_by(P1672, cat_labs, civil,impact_a,impact,P220,P5785) |> summarise(fex = sum(FEX_Cy))
+#openxlsx::write.xlsx(c1, '02.2 route taking and demographics.xlsx')
+
+
+c1 <- dt |> group_by(P1672, cat_labs, civil,impact_a,impact,
+                     P220,P5785,edug,P3303, swbi,P3503S1_1,pea,single) |> summarise(fex = sum(FEX_Cy))
+
+openxlsx::write.xlsx(c1, '02.3 route taking and demographics II.xlsx')
+
+##  education by route
+dt1 <- dt
+dt1$P1672 <- as.character(dt1$P1672)
+dt1$P1672[dt1$P1672 == "Acudió a una institución, autoridad o persona particular"] <- "Instución o tercero"
+dt1$P1672[dt1$P1672 == "Intentó llegar a un acuerdo directamente con quien tuvo el problema"] <- "Acuerdo directo"
+dt1$P1672[dt1$P1672 == "Actuó de forma violenta "] <- "Actor ilegal o acción violenta"
+dt1$P1672[dt1$P1672 == "Acudió a un actor ilegal "] <- "Actor ilegal o acción violenta"
+dt1$P1672[dt1$P1672 == "No hizo nada"] <- "Inacción"
+
+dt1 <- dt1[dt1$P1672 != "Actor ilegal o acción violenta", ]
+dt1$civil <- 'Civil'
+dt1$civil[dt1$cat_labs == 'Delitos'] <- 'Criminal'
+dt1$civil[dt1$cat_labs == 'Conflicto armado'] <- 'Criminal'
+
+dt1$P1672 <- paste0(dt1$civil,"-", dt1$P1672)
+
+dt1 <- dt1 |> group_by(edug,P1672) |> summarise(fex = sum(FEX_Cx))
+dt1 <- dt1 |> group_by(P1672) |> mutate(proc = (fex/sum(fex) * 100))
+
+my_palette  <-  c("#00AFBB", "#E7B800")
+
+segment_helper <- dt1 |> select(edug, P1672, proc) |>
+  pivot_wider(names_from = edug, values_from = proc, names_prefix = 'educ_') |>
+  mutate( change = educ_1 - educ_0,
+          P1672  = fct_reorder(P1672, educ_1 * if_else(change < 0, -1, 1))
+  )
+
+dt1 |>
+  ggplot(aes(x = proc, y = P1672, col = as.factor(edug))) +
+  geom_segment(
+    data = segment_helper,
+    aes(x = educ_0, xend = educ_1, y = P1672, yend = P1672),
+    col = 'grey60',
+    size = 1.25) +
+  geom_point(size = 6) +
+  labs(
+    x = 'Participación',
+    y =  'Ruta de acción') +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.x = element_blank()) +
+  scale_color_manual(values=c( "#E7B800", "#00AFBB"))
+
+##  pea by route
+dt1 <- dt
+dt1$P1672 <- as.character(dt1$P1672)
+dt1$P1672[dt1$P1672 == "Acudió a una institución, autoridad o persona particular"] <- "Instución o tercero"
+dt1$P1672[dt1$P1672 == "Intentó llegar a un acuerdo directamente con quien tuvo el problema"] <- "Acuerdo directo"
+dt1$P1672[dt1$P1672 == "Actuó de forma violenta "] <- "Actor ilegal o acción violenta"
+dt1$P1672[dt1$P1672 == "Acudió a un actor ilegal "] <- "Actor ilegal o acción violenta"
+dt1$P1672[dt1$P1672 == "No hizo nada"] <- "Inacción"
+
+dt1 <- dt1[dt1$P1672 != "Actor ilegal o acción violenta", ]
+dt1$civil <- 'Civil'
+dt1$civil[dt1$cat_labs == 'Delitos'] <- 'Criminal'
+dt1$civil[dt1$cat_labs == 'Conflicto armado'] <- 'Criminal'
+
+dt1$P1672 <- paste0(dt1$civil,"-", dt1$P1672)
+
+dt1 <- dt1 |> group_by(pea,P1672) |> summarise(fex = sum(FEX_Cx))
+dt1 <- dt1 |> group_by(P1672) |> mutate(proc = (fex/sum(fex) * 100))
+
+my_palette  <-  c("#00AFBB", "#E7B800")
+
+segment_helper <- dt1 |> select(pea, P1672, proc) |>
+  pivot_wider(names_from = pea, values_from = proc, names_prefix = 'pea_') |>
+  mutate( change = pea_1 - pea_0,
+          P1672  = fct_reorder(P1672, pea_1 * if_else(change < 0, -1, 1))
+  )
+
+dt1 |>
+  ggplot(aes(x = proc, y = P1672, col = as.factor(pea))) +
+  geom_segment(
+    data = segment_helper,
+    aes(x = pea_0, xend = pea_1, y = P1672, yend = P1672),
+    col = 'grey60',
+    size = 1.25) +
+  geom_point(size = 6) +
+  labs(
+    x = 'Participación',
+    y =  'Ruta de acción') +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.x = element_blank()) +
+  scale_color_manual(values=c( "#E7B800", "#00AFBB"))
+
+##  conditional dumbell
+##  
+dt1 <- dt[dt$edug == 0,]
+
+
+dt1$P1672 <- as.character(dt1$P1672)
+dt1$P1672[dt1$P1672 == "Acudió a una institución, autoridad o persona particular"] <- "Instución o tercero"
+dt1$P1672[dt1$P1672 == "Intentó llegar a un acuerdo directamente con quien tuvo el problema"] <- "Acuerdo directo"
+dt1$P1672[dt1$P1672 == "Actuó de forma violenta "] <- "Actor ilegal o acción violenta"
+dt1$P1672[dt1$P1672 == "Acudió a un actor ilegal "] <- "Actor ilegal o acción violenta"
+dt1$P1672[dt1$P1672 == "No hizo nada"] <- "Inacción"
+
+dt1$inac <- 'Acción'
+dt1$inac[dt1$P1672 == "Inacción"] <- "Inacción"
+
+dt1 <- dt1[dt1$P1672 != "Actor ilegal o acción violenta", ]
+
+dt1$civil <- 'Civil'
+dt1$civil[dt1$cat_labs == 'Delitos'] <- 'Criminal'
+dt1$civil[dt1$cat_labs == 'Conflicto armado'] <- 'Criminal'
+
+
+dt1$cat_labs[dt1$cat_labs == 'Conflicto armado'] <- 'Otro' 
+dt1$cat_labs[dt1$cat_labs == 'Discriminación'] <- 'Otro' 
+dt1$cat_labs[dt1$cat_labs == 'Educación'] <- 'Otro' 
+dt1$cat_labs[dt1$cat_labs == 'Medio ambiente'] <- 'Otro' 
+dt1$cat_labs[dt1$cat_labs == 'Propiedad'] <- 'Otro' 
+
+dt1 <- dt1 |> group_by(inac,cat_labs) |> summarise(fex = sum(FEX_Cx))
+dt1 <- dt1 |> group_by(cat_labs) |> mutate(proc = (fex/sum(fex) * 100))
+
+dt1$cat_labs <- as.factor(dt1$cat_labs)
+
+my_palette  <-  c("#00AFBB", "#E7B800")
+
+segment_helper <- dt1 |> select(inac, cat_labs, proc) |>
+  pivot_wider(names_from = inac, values_from = proc, names_prefix = 'inac_') |>
+  mutate( change = inac_Acción - inac_Inacción, cat_labs  = fct_reorder(cat_labs, change) )
+
+dt1 <- merge(dt1,segment_helper)
+
+dt1 |>
+  ggplot(aes(x = proc, y = fct_reorder(cat_labs, change), change, col = as.factor(inac))) +
+  geom_segment(
+    data = segment_helper,
+    aes(x = inac_Inacción, xend = inac_Acción, y = fct_reorder(cat_labs, change), yend = fct_reorder(cat_labs, change)),
+    col = 'grey60',
+    size = 1.25) +
+  geom_point(size = 6) +
+  labs(
+    x = 'Participación',
+    y =  'Ruta de acción') +
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor.x = element_blank()) +
+  scale_color_manual(values=c( "#E7B800", "#00AFBB"))
+
+# tile plot
+#
+#
+
+dt1 <- dt
+
+
+dt1$P1672 <- as.character(dt1$P1672)
+dt1$P1672[dt1$P1672 == "Acudió a una institución, autoridad o persona particular"] <- "Instución o tercero"
+dt1$P1672[dt1$P1672 == "Intentó llegar a un acuerdo directamente con quien tuvo el problema"] <- "Acuerdo directo"
+dt1$P1672[dt1$P1672 == "Actuó de forma violenta "] <- "Actor ilegal o acción violenta"
+dt1$P1672[dt1$P1672 == "Acudió a un actor ilegal "] <- "Actor ilegal o acción violenta"
+dt1$P1672[dt1$P1672 == "No hizo nada"] <- "Inacción"
+
+dt1$inac <- 'Acción'
+dt1$inac[dt1$P1672 == "Inacción"] <- "Inacción"
+
+dt1 <- dt1[dt1$P1672 != "Actor ilegal o acción violenta", ]
+
+dt1$civil <- 'Civil'
+dt1$civil[dt1$cat_labs == 'Delitos'] <- 'Criminal'
+dt1$civil[dt1$cat_labs == 'Conflicto armado'] <- 'Criminal'
+
+
+dt1$cat_labs[dt1$cat_labs == 'Conflicto armado'] <- 'Otro' 
+dt1$cat_labs[dt1$cat_labs == 'Discriminación'] <- 'Otro' 
+dt1$cat_labs[dt1$cat_labs == 'Educación'] <- 'Otro' 
+dt1$cat_labs[dt1$cat_labs == 'Medio ambiente'] <- 'Otro' 
+dt1$cat_labs[dt1$cat_labs == 'Propiedad'] <- 'Otro' 
+
+dt1$pcat <- paste0(dt1$cat_labs,'-',dt1$type_labs)
+
+a <- dt1[dt1$civil == 'Civil',] |> group_by(pcat,P1672) |> summarise(fex = sum(FEX_C))
+#openxlsx::write.xlsx(a, '01.13.problem number by type.xlsx')
+
+b <- a |> group_by(P1672) |> arrange(desc(fex)) |>  mutate(id = row_number())
+b$pcat[b$id > 4] <- 'Otro' 
+b <- b |> group_by(P1672,pcat) |> summarise(fex = sum(fex))
+# openxlsx::write.xlsx(b, '02.03. top problem type by route.xlsx')
+
+

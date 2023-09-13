@@ -68,10 +68,73 @@ table (dt_pj_rt_pl$full_prob, dt_pj_rt_pl$caract)
 
 dt  <-  dt_pj_rt_pl[dt_pj_rt_pl$full_prob == 1,]
 
+# problem count -- -- -- -- -- -- --
+#
+dt  <-  dt_pj_rt_pl[dt_pj_rt_pl$full_prob == 1,]
+a <- dt[!duplicated(dt$keyp),] |> group_by(nj_count1,P220,edug) |> summarise(fex = sum(FEX_C))
+#openxlsx::write.xlsx(a, '01.12.problem number by declarant.xlsx')
+
+# problem by type -- -- -- -- -- -- --
+#
+dt  <-  dt_pj_rt_pl[dt_pj_rt_pl$full_prob == 1,]
+a <- dt |> group_by(cat_labs,type_labs,P220,edug,Clase) |> summarise(fex = sum(FEX_C))
+#openxlsx::write.xlsx(a, '01.13.problem number by type.xlsx')
+
+b <- dt |> group_by(cat_labs,type_labs,) |> summarise(fex = sum(FEX_C))
+b <- b |> group_by(cat_labs) |> arrange(desc(fex)) |>  mutate(id = row_number())
+b$type_labs[b$id > 3] <- 'Otros'
+b <- b |> group_by(cat_labs,type_labs) |> summarise(fex = sum(fex))
+#openxlsx::write.xlsx(b, '01.14.problem number by top type.xlsx')
+
+dt  <-  dt_pj_rt_pl[dt_pj_rt_pl$full_prob == 1,]
+a <- dt |> group_by(cat_labs,type_labs,P220,edug,Clase,swbi,dis,P3503S1_1) |> summarise(fex = sum(FEX_C))
+#openxlsx::write.xlsx(a, '01.15.problem number by cat and demographics.xlsx')
+a |> group_by(P3503S1_1,P220) |> summarise (fex = sum(fex)) 
+
+# problem by type and age braket -- -- -- -- -- -- --
+#
+#
+
+dt  <-  dt_pj_rt_pl[dt_pj_rt_pl$full_prob == 1,]
+
+dt$ageb <- '18-22'
+dt$ageb[dt$P5785 > 22 & dt$P5785 < 28] <- '23-27'
+dt$ageb[dt$P5785 > 27 & dt$P5785 < 33] <- '28-32'
+dt$ageb[dt$P5785 > 32 & dt$P5785 < 38] <- '33-37'
+dt$ageb[dt$P5785 > 37 & dt$P5785 < 43] <- '38-42'
+dt$ageb[dt$P5785 > 42 & dt$P5785 < 48] <- '43-47'
+dt$ageb[dt$P5785 > 47 & dt$P5785 < 53] <- '48-52'
+dt$ageb[dt$P5785 > 52 & dt$P5785 < 58] <- '53-57'
+dt$ageb[dt$P5785 > 57 & dt$P5785 < 63] <- '58-62'
+dt$ageb[dt$P5785 > 62] <- '> 62'
+
+table(dt$P5785,dt$ageb)
+a <- dt |> group_by(cat_labs,type_labs,P220,ageb) |> summarise(fex = sum(FEX_C))
+#openxlsx::write.xlsx(a, '01.13.problem number by type.xlsx')
+
+  dt <- dt[dt$cat_labs != 'Delitos' & dt$P220 == 'Hombre',]
+  dt$pcat <- paste0(dt$cat_labs,'-',dt$type_labs)
+  
+  b <- dt |> group_by(ageb,pcat) |> summarise(fex = sum(FEX_C))
+  b <- b |> group_by(ageb) |> arrange(desc(fex)) |>  mutate(id = row_number())
+  b$pcat[b$id > 4] <- 'Otro' 
+  b <- b |> group_by(ageb,pcat) |> summarise(fex = sum(fex))
+  openxlsx::write.xlsx(b, '01.19.problem number by type and age top 3 hombre.xlsx')
+
 # impact distribution breaks - - - - - -
 
-tab1 <- dt |> group_by(impact,P220,old,edug,pea,dis,ownedh,cat_labs ) |> summarise(fex = sum(FEX_Cx, na.rm = TRUE))
-#openxlsx::write.xlsx(tab1, 'impact groupings by demographics.xlsx')
+dt$P5785_1 <- as.character(dt$P5785) 
+dt$P5785_1[dt$P5785 > 59 ] <- '> 59'
+dt$cat_labs_1 <- dt$cat_labs
+
+dt$cat_labs_1[dt$cat_labs_1 == 'Conflicto armado' ] <- 'Otro'
+dt$cat_labs_1[dt$cat_labs_1 == 'Discriminación' ] <- 'Otro'
+dt$cat_labs_1[dt$cat_labs_1 == 'Educación' ] <- 'Otro'
+dt$cat_labs_1[dt$cat_labs_1 == 'Propiedad' ] <- 'Otro'
+dt$cat_labs_1[dt$cat_labs_1 == 'Medio ambiente' ] <- 'Otro'
+
+tab1 <- dt |> group_by(impact,P220,old,edug,pea,dis,ownedh,cat_labs,cat_labs_1,P5785 ) |> summarise(fex = sum(FEX_Cx, na.rm = TRUE))
+# openxlsx::write.xlsx(tab1, '01.18.decalration groupings by problem type and demographics.xlsx')
 
 library(ggplot2)
 library(ggridges)
