@@ -472,3 +472,124 @@ b <- b |> group_by(P1672,pcat) |> summarise(fex = sum(fex))
 # openxlsx::write.xlsx(b, '02.03. top problem type by route.xlsx')
 
 
+# impact and inaction by SWB groups.
+
+dt1 <- dt
+
+
+dt1$P1672 <- as.character(dt1$P1672)
+dt1$P1672[dt1$P1672 == "Acudió a una institución, autoridad o persona particular"] <- "Instución o tercero"
+dt1$P1672[dt1$P1672 == "Intentó llegar a un acuerdo directamente con quien tuvo el problema"] <- "Acuerdo directo"
+dt1$P1672[dt1$P1672 == "Actuó de forma violenta "] <- "Actor ilegal o acción violenta"
+dt1$P1672[dt1$P1672 == "Acudió a un actor ilegal "] <- "Actor ilegal o acción violenta"
+dt1$P1672[dt1$P1672 == "No hizo nada"] <- "Inacción"
+
+dt1$inac <- 0
+dt1$inac[dt1$P1672 == "Inacción"] <- 1
+
+dt1 <- dt1[dt1$P1672 != "Actor ilegal o acción violenta", ]
+
+dt1$civil <- 'Civil'
+dt1$civil[dt1$cat_labs == 'Delitos'] <- 'Criminal'
+dt1$civil[dt1$cat_labs == 'Conflicto armado'] <- 'Criminal'
+
+
+dt1$cat_labs[dt1$cat_labs == 'Conflicto armado'] <- 'Otro' 
+dt1$cat_labs[dt1$cat_labs == 'Discriminación'] <- 'Otro' 
+dt1$cat_labs[dt1$cat_labs == 'Educación'] <- 'Otro' 
+dt1$cat_labs[dt1$cat_labs == 'Medio ambiente'] <- 'Otro' 
+dt1$cat_labs[dt1$cat_labs == 'Propiedad'] <- 'Otro' 
+
+dt1 <- dt1[dt1$cat_labs != 'Otro',]
+dt1 <- dt1[is.na(dt1$impact) != TRUE,]
+dt1 <- dt1[is.na(dt1$swbi) != TRUE,]
+
+table(is.na(dt1$cat_labs))
+
+
+a <- dt1[dt1$swbi == 1,] |> group_by(cat_labs) |> summarise(imp = mean(impact,na.rm = TRUE))
+b <- dt1[dt1$swbi == 1,] |> group_by(cat_labs) |> summarise(ina = mean(inac))
+c <- merge(a,b, all.x = TRUE)
+c$swbi <- 'Bajo' 
+
+a <- dt1[dt1$swbi == 0,] |> group_by(cat_labs) |> summarise(imp = mean(impact,na.rm = TRUE))
+b <- dt1[dt1$swbi == 0,] |> group_by(cat_labs) |> summarise(ina = mean(inac))
+d <- merge(a,b, all.x = TRUE)
+d$swbi <- 'Alto' 
+
+e <- rbind(c,d)
+
+# openxlsx::write.xlsx(e, '2.4.SWB impact and inaction rate scatters by tipology.xlsx')
+
+# 06. Route taking by household characteristics  ---------------------------------------------------
+dt  <-  dt_pj_rt_pl[dt_pj_rt_pl$caract == 1,]
+dt1  <-  dt
+
+dt1$P1672 <- as.character(dt1$P1672)
+dt1$P1672[dt1$P1672 == "Acudió a una institución, autoridad o persona particular"] <- "Instución o tercero"
+dt1$P1672[dt1$P1672 == "Intentó llegar a un acuerdo directamente con quien tuvo el problema"] <- "Acuerdo directo"
+dt1$P1672[dt1$P1672 == "Actuó de forma violenta "] <- "Actor ilegal o acción violenta"
+dt1$P1672[dt1$P1672 == "Acudió a un actor ilegal "] <- "Actor ilegal o acción violenta"
+dt1$P1672[dt1$P1672 == "No hizo nada"] <- "Inacción"
+
+dt1$inac <- 0
+dt1$inac[dt1$P1672 == "Inacción"] <- 1
+
+dt1 <- dt1[dt1$P1672 != "Actor ilegal o acción violenta", ]
+
+dt1$civil <- 'Civil'
+dt1$civil[dt1$cat_labs == 'Delitos'] <- 'Criminal'
+dt1$civil[dt1$cat_labs == 'Conflicto armado'] <- 'Criminal'
+
+dt1$cat_labs[dt1$cat_labs == 'Conflicto armado'] <- 'Otro' 
+dt1$cat_labs[dt1$cat_labs == 'Discriminación'] <- 'Otro' 
+dt1$cat_labs[dt1$cat_labs == 'Educación'] <- 'Otro' 
+dt1$cat_labs[dt1$cat_labs == 'Medio ambiente'] <- 'Otro' 
+dt1$cat_labs[dt1$cat_labs == 'Propiedad'] <- 'Otro' 
+
+
+dt1$impact_a <- 'Bajo'
+dt1$impact_a[dt1$impact < 8] <- 'Alto'
+
+dt2 <- dt1 |> group_by(type_labs,cat_labs, Clase, impact, impact_a, inac) |> summarise(fex = mean(FEX_Cx))
+
+#openxlsx::write.xlsx(dt1, '02.05.route and hh charactersiticas.xlsx')
+
+## Perception and routes ---------------------------------------------------------------------------
+## 
+dt  <-  dt_pj_rt_pl[dt_pj_rt_pl$caract == 1,]
+dt1  <-  dt
+
+dt1$P1672 <- as.character(dt1$P1672)
+dt1$P1672[dt1$P1672 == "Acudió a una institución, autoridad o persona particular"] <- "Instución o tercero"
+dt1$P1672[dt1$P1672 == "Intentó llegar a un acuerdo directamente con quien tuvo el problema"] <- "Acuerdo directo"
+dt1$P1672[dt1$P1672 == "Actuó de forma violenta "] <- "Actor ilegal o acción violenta"
+dt1$P1672[dt1$P1672 == "Acudió a un actor ilegal "] <- "Actor ilegal o acción violenta"
+dt1$P1672[dt1$P1672 == "No hizo nada"] <- "Inacción"
+
+dt1$inac <- 0
+dt1$inac[dt1$P1672 == "Inacción"] <- 1
+
+dt1 <- dt1[dt1$P1672 != "Actor ilegal o acción violenta", ]
+
+dt1$civil <- 'Civil'
+dt1$civil[dt1$cat_labs == 'Delitos'] <- 'Criminal'
+dt1$civil[dt1$cat_labs == 'Conflicto armado'] <- 'Criminal'
+
+dt1$cat_labs[dt1$cat_labs == 'Conflicto armado'] <- 'Otro' 
+dt1$cat_labs[dt1$cat_labs == 'Discriminación'] <- 'Otro' 
+dt1$cat_labs[dt1$cat_labs == 'Educación'] <- 'Otro' 
+dt1$cat_labs[dt1$cat_labs == 'Medio ambiente'] <- 'Otro' 
+dt1$cat_labs[dt1$cat_labs == 'Propiedad'] <- 'Otro' 
+
+
+dt1$impact_a <- 'Bajo'
+dt1$impact_a[dt1$impact < 8] <- 'Alto'
+
+dt2 <- dt1 |> group_by(P1182S1,P1181S1,P1181S2, 
+                       cat_labs, safe_local,safe_WaN,
+                       safe_city,Clase, impact, inac,
+                       P1672,P564, civil
+                       ) |> summarise(fex = mean(FEX_Cx))
+
+openxlsx::write.xlsx(dt2, '02.06.route and security perception II.xlsx')
